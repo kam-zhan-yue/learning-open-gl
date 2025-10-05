@@ -24,16 +24,29 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 # -----------------------------
-# Automatically add all subprojects
+# Automatically add all examples (recursively)
 # -----------------------------
-file(GLOB_RECURSE EXAMPLES RELATIVE ${CMAKE_SOURCE_DIR} */main.cpp)
+file(GLOB_RECURSE EXAMPLES
+  RELATIVE ${CMAKE_SOURCE_DIR}
+  [0-9]*/*/main.cpp
+)
 
 foreach(example_file ${EXAMPLES})
+  # Get the directory (e.g. "1.getting-started/1.1.hello-window")
   get_filename_component(example_dir ${example_file} DIRECTORY)
-  get_filename_component(example_name ${example_dir} NAME)
 
-  add_executable(${example_name} ${example_file})
-  target_link_libraries(${example_name} PRIVATE glad glfw)
-  message(STATUS "Added example: ${example_name}")
+  # Use only the last folder as the target name (hello-window)
+  get_filename_component(target_name ${example_dir} NAME)
+
+  # Create executable
+  add_executable(${target_name} ${example_file})
+  target_link_libraries(${target_name} PRIVATE glad glfw)
+
+  # Put all executables in a central bin folder
+  set_target_properties(${target_name} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${example_dir}
+  )
+
+  message(STATUS "Added example: ${example_dir} → target ${target_name}")
 endforeach()
 
