@@ -5,11 +5,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Add GLAD as a library
+# -----------------------------
+# GLAD
+# -----------------------------
 add_library(glad external/glad/src/glad.c)
 target_include_directories(glad PUBLIC external/glad/include)
 
-# Find GLFW
+# -----------------------------
+# GLFW (via FetchContent)
+# -----------------------------
 include(FetchContent)
 
 FetchContent_Declare(
@@ -19,6 +23,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-# Add each example project
-add_subdirectory(4-hello-window)
-add_subdirectory(5-hello-triangle)
+# -----------------------------
+# Automatically add all subprojects
+# -----------------------------
+file(GLOB_RECURSE EXAMPLES RELATIVE ${CMAKE_SOURCE_DIR} */main.cpp)
+
+foreach(example_file ${EXAMPLES})
+  get_filename_component(example_dir ${example_file} DIRECTORY)
+  get_filename_component(example_name ${example_dir} NAME)
+
+  add_executable(${example_name} ${example_file})
+  target_link_libraries(${example_name} PRIVATE glad glfw)
+  message(STATUS "Added example: ${example_name}")
+endforeach()
+
