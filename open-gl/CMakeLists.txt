@@ -20,4 +20,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 # Add each example project
-add_subdirectory(3-creating-a-window)
+add_subdirectory(4-hello-window)

@@ -23,3 +23,21 @@ To fully setup with neovim, I needed to do the following
 ```shell
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ```
+
+## Compiling and Running
+
+In opengl/
+
+```shell
+cmake -S . -B build
+cmake --build build
+./build/4-hello-window/hello-window
+```
+
+Or
+
+```shell
+chmod -x ./build.sh # do this once
+./build.sh
+./build/4-hello-window/hello-window
+```
