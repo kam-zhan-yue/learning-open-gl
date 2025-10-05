@@ -21,3 +21,4 @@ FetchContent_MakeAvailable(glfw)
 
 # Add each example project
 add_subdirectory(4-hello-window)
+add_subdirectory(5-hello-triangle)

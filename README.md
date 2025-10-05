@@ -39,5 +39,5 @@ Or
 ```shell
 chmod -x ./build.sh # do this once
 ./build.sh
-./build/4-hello-window/hello-window
+./build/4-hello-window/main
 ```
