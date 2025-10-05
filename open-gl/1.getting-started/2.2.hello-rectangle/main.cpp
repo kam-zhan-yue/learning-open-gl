@@ -128,22 +128,33 @@ unsigned int setupShaders() {
 unsigned int setupVAO() {
   // setup vertices for the triangle
   float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f,
-    0.0f, 0.5f, 0.0f,
+    0.5, 0.5, 0.0f, // top right
+    0.5f, -0.5f, 0.0f, // bottom right 
+    -0.5f, -0.5f, 0.0f, // bottom left
+    -0.5f, 0.5f, 0.0f, // top left
   };
 
-  // generate the VAO and VBO
-  unsigned int VAO, VBO;
+  unsigned int indices[] = {
+    0, 1, 3, // first triangle
+    1, 2, 3, // second triangle
+  };
+
+  // generate the VAO, VBO, and EBO
+  unsigned int VAO, VBO, EBO;
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
+  glGenBuffers(1, &EBO);
 
-  // bind the VAO and VBO, tell the GPU to use these values now
+  // bind the VAO first to let the VBO and EBO bind to it
   glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-  // copy the vertifces array in a buffer for OpenGL to use
+  // bind the VBO and assign vertices to be used by OpenGL
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  // bind the EBO and assign indices to be used by OpenGL
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
   // then set the vertex attribute pointers to be used in the vertex shader
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -151,6 +162,8 @@ unsigned int setupVAO() {
 
   // unbind everything
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
+  /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);*/
   glBindVertexArray(0);
 
   return VAO;
@@ -158,9 +171,9 @@ unsigned int setupVAO() {
 
 void renderRectangle(unsigned int shaderProgram, unsigned int VAO) {
   glUseProgram(shaderProgram);
-  glBindVertexArray(VAO);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-
+  glBindVertexArray(VAO); // bind
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // draw
+  glBindVertexArray(0); // unbind
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
