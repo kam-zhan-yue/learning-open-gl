@@ -41,7 +41,7 @@ int main() {
   // Register the frame buffer size callback when the user resizes the window
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-  Shader shader((std::string(SHADER_DIR) + "/shader.vs").c_str(), (std::string(SHADER_DIR) + "/shader.fs").c_str());
+  Shader shader((std::string(SHADER_DIR) + "/vertex.glsl").c_str(), (std::string(SHADER_DIR) + "/fragment.glsl").c_str());
   unsigned int VAO = setupVAO();
 
   // Create a render loop that swaps the front/back buffers and polls for user events

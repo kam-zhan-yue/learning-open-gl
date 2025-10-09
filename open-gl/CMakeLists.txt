@@ -48,6 +48,30 @@ foreach(example_file ${EXAMPLES})
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${example_dir}
   )
 
+  # Make all calls to the shader directory absolute
+  target_compile_definitions(${target_name} PRIVATE
+    SHADER_DIR="${CMAKE_BINARY_DIR}/bin/${example_dir}"
+  )
+
+  # -----------------------------
+  # Copy shader files to build folder
+  # -----------------------------
+  file(GLOB SHADERS
+    RELATIVE ${CMAKE_SOURCE_DIR}
+    ${example_dir}/*.vs
+    ${example_dir}/*.fs
+    ${example_dir}/*.glsl
+  )
+
+  foreach(shader_file ${SHADERS})
+    add_custom_command(
+      TARGET ${target_name} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${CMAKE_SOURCE_DIR}/${shader_file}
+              ${CMAKE_BINARY_DIR}/bin/${example_dir}/
+    )
+  endforeach()
+
   message(STATUS "Added example: ${example_dir} → target ${target_name}")
 endforeach()
 
