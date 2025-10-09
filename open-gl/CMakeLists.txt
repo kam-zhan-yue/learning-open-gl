@@ -41,6 +41,7 @@ foreach(example_file ${EXAMPLES})
   # Create executable
   add_executable(${target_name} ${example_file})
   target_link_libraries(${target_name} PRIVATE glad glfw)
+  target_include_directories(${target_name} PRIVATE includes)
 
   # Put all executables in a central bin folder
   set_target_properties(${target_name} PROPERTIES
