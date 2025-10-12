@@ -46,9 +46,9 @@ public:
       std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
     }
 
-    std::cout << "Vertex Path is:\n" << vertexPath << std::endl;
-    std::cout << "Vertex Code is:\n" << vertexCode << std::endl;
-    std::cout << "Fragment Code is:\n" << fragmentCode << std::endl;
+    /*std::cout << "Vertex Path is:\n" << vertexPath << std::endl;*/
+    /*std::cout << "Vertex Code is:\n" << vertexCode << std::endl;*/
+    /*std::cout << "Fragment Code is:\n" << fragmentCode << std::endl;*/
     
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();

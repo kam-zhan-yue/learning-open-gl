@@ -12,6 +12,12 @@ add_library(glad external/glad/src/glad.c)
 target_include_directories(glad PUBLIC external/glad/include)
 
 # -----------------------------
+# STB_IMAGE
+# -----------------------------
+add_library(stb_image external/stb_image.cpp)
+target_include_directories(stb_image PUBLIC includes)
+
+# -----------------------------
 # GLFW (via FetchContent)
 # -----------------------------
 include(FetchContent)
@@ -40,7 +46,7 @@ foreach(example_file ${EXAMPLES})
 
   # Create executable
   add_executable(${target_name} ${example_file})
-  target_link_libraries(${target_name} PRIVATE glad glfw)
+  target_link_libraries(${target_name} PRIVATE glad glfw stb_image)
   target_include_directories(${target_name} PRIVATE includes)
 
   # Put all executables in a central bin folder
@@ -51,6 +57,7 @@ foreach(example_file ${EXAMPLES})
   # Make all calls to the shader directory absolute
   target_compile_definitions(${target_name} PRIVATE
     SHADER_DIR="${CMAKE_BINARY_DIR}/bin/${example_dir}"
+    RESOURCES_DIR="${CMAKE_SOURCE_DIR}/resources"
   )
 
   # -----------------------------
@@ -61,6 +68,7 @@ foreach(example_file ${EXAMPLES})
     ${example_dir}/*.vs
     ${example_dir}/*.fs
     ${example_dir}/*.glsl
+    ${example_dir}/*.png
   )
 
   foreach(shader_file ${SHADERS})
