@@ -64,21 +64,33 @@ foreach(example_file ${EXAMPLES})
   # Copy shader files to build folder
   # -----------------------------
   file(GLOB SHADERS
-    RELATIVE ${CMAKE_SOURCE_DIR}
-    ${example_dir}/*.vs
-    ${example_dir}/*.fs
-    ${example_dir}/*.glsl
-    ${example_dir}/*.png
+    ${CMAKE_SOURCE_DIR}/${example_dir}/*.vs
+    ${CMAKE_SOURCE_DIR}/${example_dir}/*.fs
+    ${CMAKE_SOURCE_DIR}/${example_dir}/*.glsl
+    ${CMAKE_SOURCE_DIR}/${example_dir}/*.png
   )
 
   foreach(shader_file ${SHADERS})
+    get_filename_component(shader_name ${shader_file} NAME)
+    set(output_file ${CMAKE_BINARY_DIR}/bin/${example_dir}/${shader_name})
+    
     add_custom_command(
-      TARGET ${target_name} POST_BUILD
+      OUTPUT ${output_file}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${CMAKE_SOURCE_DIR}/${shader_file}
-              ${CMAKE_BINARY_DIR}/bin/${example_dir}/
+              ${shader_file}
+              ${output_file}
+      DEPENDS ${shader_file}
+      COMMENT "Copying ${shader_name}"
     )
+    
+    list(APPEND SHADER_OUTPUTS ${output_file})
   endforeach()
+
+  # Make target depend on shader outputs
+  if(SHADER_OUTPUTS)
+    add_custom_target(${target_name}_shaders ALL DEPENDS ${SHADER_OUTPUTS})
+    add_dependencies(${target_name} ${target_name}_shaders)
+  endif()
 
   message(STATUS "Added example: ${example_dir} → target ${target_name}")
 endforeach()
