@@ -3,13 +3,14 @@
 #include <GLFW/glfw3.h>
 #include <stbi_image.h>
 #include <iostream>
+#include <array>
 
 // Function Headers
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 unsigned int setupVAO();
-unsigned int setupTexture();
-void renderRectangle(Shader &shader, unsigned int VAO, unsigned int texture);
+std::array<unsigned int, 2> setupTextures();
+void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures);
 
 int main() {
   // Init GLFW and set the context variables
@@ -45,7 +46,15 @@ int main() {
 
   Shader shader((std::string(SHADER_DIR) + "/vertex.glsl").c_str(), (std::string(SHADER_DIR) + "/fragment.glsl").c_str());
   unsigned int VAO = setupVAO();
-  unsigned int texture = setupTexture();
+  std::array<unsigned int, 2> textures = setupTextures();
+
+  // setup shader
+  shader.use();
+  shader.setInt("texture1", 0);
+  shader.setInt("texture2", 1);
+
+  std::cout << "GL_TEXTURE0 " << GL_TEXTURE0 << std::endl;
+  std::cout << "GL_TEXTURE1 " << GL_TEXTURE1 << std::endl;
 
   // Create a render loop that swaps the front/back buffers and polls for user events
   // Necessary to prevent the window from closing instantly
@@ -56,7 +65,7 @@ int main() {
     // rendering commands
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    renderRectangle(shader, VAO, texture);
+    renderRectangle(shader, VAO, textures);
 
     // check events and swap buffers
     glfwSwapBuffers(window);
@@ -117,18 +126,23 @@ unsigned int setupVAO() {
   return VAO;
 }
 
-unsigned int setupTexture() {
+std::array<unsigned int, 2> setupTextures() {
   // generate and bind the texture
-  unsigned int texture;
-  glGenTextures(1, &texture);
-  /*glActiveTexture(GL_TEXTURE0);*/ // This is optional as GL_TEXTURE0 is activated by default
-  glBindTexture(GL_TEXTURE_2D, texture);
+  std::array<unsigned int, 2> textures{};
+  glGenTextures(2, textures.data());
+
+  // texture 1
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
 
   // set the texture wrapping / filtering options
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // flip images vertically
+  stbi_set_flip_vertically_on_load(true);
 
   // load and generate the texture
   int width, height, nrChannels;
@@ -142,15 +156,40 @@ unsigned int setupTexture() {
     std::cout << "Failed to load texture" << std::endl;
   }
 
+  // texture 2
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+
+  // set the texture wrapping / filtering options
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // load and generate the texture
+  resourcePath = (std::string(RESOURCES_DIR) + "/textures/awesomeface.png");
+  data = stbi_load(resourcePath.c_str(), &width, &height, &nrChannels, 0);
+
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cout << "Failed to load texture" << std::endl;
+  }
+
   // free the image after it is loaded into the texture
   stbi_image_free(data);
-
-  return texture;
+  return textures;
 }
 
-void renderRectangle(Shader &shader, unsigned int VAO, unsigned int texture) {
-  glBindTexture(GL_TEXTURE_2D, texture);
+void renderRectangle(Shader &shader ,unsigned int VAO, std::array<unsigned int, 2> textures) {
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+
   shader.use();
+
   glBindVertexArray(VAO);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
