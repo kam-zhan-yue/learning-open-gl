@@ -18,6 +18,12 @@ add_library(stb_image external/stb_image.cpp)
 target_include_directories(stb_image PUBLIC includes)
 
 # -----------------------------
+# GLM (header-only)
+# -----------------------------
+add_library(glm INTERFACE)
+target_include_directories(glm INTERFACE includes)
+
+# -----------------------------
 # GLFW (via FetchContent)
 # -----------------------------
 include(FetchContent)
