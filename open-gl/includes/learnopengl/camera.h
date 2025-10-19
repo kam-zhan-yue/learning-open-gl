@@ -17,7 +17,7 @@ public:
 
   float cameraSpeed = 2.5f;
   float sensitivity = 0.1f;
-  float zoom = 1.0f;
+  float zoom = 45.0f;
 
   Camera(glm::vec3 initialPos) {
     cameraPos = initialPos;
@@ -45,7 +45,7 @@ public:
       cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
   }
 
-  void processMouse(float xOffset, float yOffset) {
+  void processMouse(double xOffset, double yOffset) {
     yaw += xOffset * sensitivity;
     pitch += yOffset * sensitivity;
 
@@ -59,6 +59,14 @@ public:
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(direction);
+  }
+
+  void processScroll(double xOffset, double yOffset) {
+    zoom -= (float)yOffset;
+    if (zoom < 1.0f)
+      zoom = 1.0f;
+    if (zoom > 45.0f)
+      zoom = 45.0f;
   }
 };
 
