@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 
+#include <glm/glm.hpp>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -112,6 +113,10 @@ public:
 
   void setFloat(const std::string &name, float value) const {
     glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+  };
+
+  void setVec3(const std::string &name, glm::vec3 value) const {
+    glUniform3f(glGetUniformLocation(ID, name.c_str()), value.x, value.y, value.z);
   };
 };
 
