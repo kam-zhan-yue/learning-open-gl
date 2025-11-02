@@ -24,6 +24,17 @@ add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE includes)
 
 # -----------------------------
+# Assimp
+# -----------------------------
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE INTERNAL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE INTERNAL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE INTERNAL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE INTERNAL "" FORCE)
+add_subdirectory(external/assimp)
+
+# -----------------------------
 # GLFW (via FetchContent)
 # -----------------------------
 include(FetchContent)
@@ -52,7 +63,7 @@ foreach(example_file ${EXAMPLES})
 
   # Create executable
   add_executable(${target_name} ${example_file})
-  target_link_libraries(${target_name} PRIVATE glad glfw stb_image)
+  target_link_libraries(${target_name} PRIVATE glad glfw stb_image assimp)
   target_include_directories(${target_name} PRIVATE includes)
 
   # Put all executables in a central bin folder
