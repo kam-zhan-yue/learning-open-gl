@@ -10,6 +10,11 @@
 #include <array>
 #include <algorithm>
 
+// Data Structures
+struct WorldData {
+  glm::vec3 cubePositions[10];
+  glm::vec3 lightPositions[4];
+};
 
 // Function Headers
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -18,8 +23,8 @@ unsigned int setupVAO();
 unsigned int setupLightVAO();
 unsigned int loadTexture(char const *path);
 std::array<unsigned int, 2> setupTextures();
-void renderLight(Shader &shader, unsigned int VAO);
-void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount);
+void renderLight(Shader &shader, unsigned int VAO, WorldData world);
+void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world);
 void mouseCallback(GLFWwindow *window, double xPos, double yPos);
 void scrollCallback(GLFWwindow *window, double xPos, double yPos);
 
@@ -95,6 +100,29 @@ int main() {
   unsigned int LIGHT_VAO = setupLightVAO();
   std::array<unsigned int, 2> textures = setupTextures();
 
+  WorldData world = {
+    {
+      glm::vec3( 0.0f,  0.0f,   0.0f),
+      glm::vec3( 2.0f,  5.0f, -15.0f),
+      glm::vec3(-1.5f, -2.2f,  -2.5f),
+      glm::vec3(-3.8f, -2.0f, -12.3f),
+      glm::vec3( 2.4f, -0.4f,  -3.5f),
+      glm::vec3(-1.7f,  3.0f,  -7.5f),
+      glm::vec3( 1.3f, -2.0f,  -2.5f),
+      glm::vec3( 1.5f,  2.0f,  -2.5f),
+      glm::vec3( 1.5f,  0.2f,  -1.5f),
+      glm::vec3(-1.3f,  1.0f,  -1.5f)
+    },
+    {
+      glm::vec3( 0.7f,  0.2f,  2.0f),
+      glm::vec3( 2.3f, -3.3f, -4.0f),
+      glm::vec3(-4.0f,  2.0f, -12.0f),
+      glm::vec3( 0.0f,  0.0f, -3.0f)
+    },
+  };
+
+
+
   // Create a render loop that swaps the front/back buffers and polls for user events
   // Necessary to prevent the window from closing instantly
   while (!glfwWindowShouldClose(window)) {
@@ -109,8 +137,8 @@ int main() {
     // rendering commands
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    renderLight(lightShader, LIGHT_VAO);
-    renderRectangle(shader, VAO, textures, mixAmount);
+    renderLight(lightShader, LIGHT_VAO, world);
+    renderRectangle(shader, VAO, textures, mixAmount, world);
 
     // check events and swap buffers
     glfwSwapBuffers(window);
@@ -322,45 +350,31 @@ std::array<unsigned int, 2> setupTextures() {
   return textures;
 }
 
-void renderLight(Shader &shader, unsigned int VAO) {
-  // The model matrix transforms the local space to the world space
-  glm::mat4 model = glm::mat4(1.0f);
-  model = glm::translate(model, lightPos);
-  model = glm::scale(model, glm::vec3(0.2f));
-
+void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
   glm::mat4 view = camera.getLookAt();
   glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 
   shader.use();
 
-  // Render the light
   unsigned int viewLoc = glGetUniformLocation(shader.ID, "view");
   glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
   unsigned int projectionLoc = glGetUniformLocation(shader.ID, "projection");
   glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-  unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
-  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-  // Render the light
+  // Render the lights
   glBindVertexArray(VAO);
-  glDrawArrays(GL_TRIANGLES, 0, 36);
+  for (unsigned int i = 0; i < 4; ++i) {
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, world.lightPositions[i]);
+    model = glm::scale(model, glm::vec3(0.2f));
+
+    unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
 }
 
-void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount) {
-  // Calculate the transformation matrices
-  glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f,  0.0f,   0.0f),
-    glm::vec3( 2.0f,  5.0f, -15.0f),
-    glm::vec3(-1.5f, -2.2f,  -2.5f),
-    glm::vec3(-3.8f, -2.0f, -12.3f),
-    glm::vec3( 2.4f, -0.4f,  -3.5f),
-    glm::vec3(-1.7f,  3.0f,  -7.5f),
-    glm::vec3( 1.3f, -2.0f,  -2.5f),
-    glm::vec3( 1.5f,  2.0f,  -2.5f),
-    glm::vec3( 1.5f,  0.2f,  -1.5f),
-    glm::vec3(-1.3f,  1.0f,  -1.5f)
-  };
-  
+void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world) {
   // The model matrix transforms the local space to the world space
   glm::mat4 view = camera.getLookAt();
   glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
@@ -381,16 +395,53 @@ void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 
   shader.setVec3("directionalLight.diffuse", diffuseColour);
   shader.setVec3("directionalLight.specular", glm::vec3(1.0f));
 
-  shader.setVec3("light.position", camera.cameraPos);
-  shader.setVec3("light.direction", camera.cameraFront);
-  shader.setFloat("light.inner", glm::cos(glm::radians(10.5f)));
-  shader.setFloat("light.outer", glm::cos(glm::radians(15.0f)));
-  shader.setVec3("light.ambient", ambientColour);
-  shader.setVec3("light.diffuse", diffuseColour);
-  shader.setVec3("light.specular", glm::vec3(1.0f));
-  shader.setFloat("light.constant", 1.0f);
-  shader.setFloat("light.linear", 0.09f);
-  shader.setFloat("light.quadratic", 0.032f);
+  // Point Light Parameters
+  shader.setVec3("pointLights[0].position", world.lightPositions[0]);
+  shader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+  shader.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+  shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+  shader.setFloat("pointLights[0].constant", 1.0f);
+  shader.setFloat("pointLights[0].linear", 0.09f);
+  shader.setFloat("pointLights[0].quadratic", 0.032f);
+  // point light 2
+  shader.setVec3("pointLights[1].position", world.lightPositions[1]);
+  shader.setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+  shader.setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+  shader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+  shader.setFloat("pointLights[1].constant", 1.0f);
+  shader.setFloat("pointLights[1].linear", 0.09f);
+  shader.setFloat("pointLights[1].quadratic", 0.032f);
+  // point light 3
+  shader.setVec3("pointLights[2].position", world.lightPositions[2]);
+  shader.setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
+  shader.setVec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
+  shader.setVec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
+  shader.setFloat("pointLights[2].constant", 1.0f);
+  shader.setFloat("pointLights[2].linear", 0.09f);
+  shader.setFloat("pointLights[2].quadratic", 0.032f);
+  // point light 4
+  shader.setVec3("pointLights[3].position", world.lightPositions[3]);
+  shader.setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
+  shader.setVec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
+  shader.setVec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
+  shader.setFloat("pointLights[3].constant", 1.0f);
+  shader.setFloat("pointLights[3].linear", 0.09f);
+  shader.setFloat("pointLights[3].quadratic", 0.032f);
+
+
+  // Spot Light Parameters
+  shader.setVec3("spotLight.position", camera.cameraPos);
+  shader.setVec3("spotLight.direction", camera.cameraFront);
+  shader.setFloat("spotLight.inner", glm::cos(glm::radians(10.5f)));
+  shader.setFloat("spotLight.outer", glm::cos(glm::radians(15.0f)));
+  shader.setVec3("spotLight.ambient", ambientColour);
+  shader.setVec3("spotLight.diffuse", diffuseColour);
+  shader.setVec3("spotLight.specular", glm::vec3(1.0f));
+  shader.setFloat("spotLight.constant", 1.0f);
+  shader.setFloat("spotLight.linear", 0.09f);
+  shader.setFloat("spotLight.quadratic", 0.032f);
+
+  // Material Parameters
   shader.setInt("material.diffuse", 0);
   shader.setInt("material.specular", 1);
   shader.setFloat("material.shininess", 32.0f);
@@ -414,7 +465,7 @@ void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 
   for (unsigned int i = 0; i < 10; ++i) {
     glm::mat4 model = glm::mat4(1.0f);
     float angle = i * 20.0f;
-    model = glm::translate(model, cubePositions[i]);
+    model = glm::translate(model, world.cubePositions[i]);
     model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
 
     unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
