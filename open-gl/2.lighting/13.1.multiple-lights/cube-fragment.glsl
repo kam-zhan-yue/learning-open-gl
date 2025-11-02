@@ -45,30 +45,58 @@ in vec2 TexCoords;
 out vec4 FragColor;
 
 uniform Material material;
+
+#define NUM_POINT_LIGHTS 4
+uniform PointLight pointLights[NUM_POINT_LIGHTS];
 uniform DirectionalLight directionalLight;
+
 uniform FlashLight light;
 uniform vec3 viewPos;
 
-vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
-  vec3 lightDir = normalize(-light.direction);
-  vec3 textureColour = vec3(texture(material.diffuse, TexCoords));
+vec3 getAmbient(vec3 ambient, vec3 textureColour) {
+  return textureColour * ambient;
+}
 
-  // Calculate Ambient Light
-  vec3 ambient = textureColour * light.ambient;
-
-  // Calculate Diffuse Light
+vec3 getDiffuse(vec3 diffuse, vec3 textureColour, vec3 normal, vec3 lightDir) {
   float diff = max(dot(normal, lightDir), 0.0);
-  vec3 diffuse = light.diffuse * diff * textureColour;
+  return diffuse * diff * textureColour;
+}
 
-  // Calculate Specular Light
+vec3 getSpecular(vec3 specular, vec3 normal, vec3 lightDir, vec3 viewDir) {
   vec3 specularColour = vec3(texture(material.specular, TexCoords));
   vec3 reflectDir = reflect(-lightDir, normal);
   float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-  vec3 specular = light.specular * (spec * specularColour);
+  return specular * (spec * specularColour);
+}
 
-  // Bring it all together
+float getAttenuation(vec3 position, float constant, float linear, float quadratic) {
+  float distance = length(position - FragPos);
+  return 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+}
+
+vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, vec3 textureColour) {
+  // Directional light has its own direction
+  vec3 lightDir = normalize(-light.direction);
+  vec3 ambient = getAmbient(light.ambient, textureColour);
+  vec3 diffuse = getDiffuse(light.diffuse, textureColour, normal, lightDir);
+  vec3 specular = getSpecular(light.specular, normal, lightDir, viewDir);
   vec3 result = diffuse + ambient + specular;
   return result;
+}
+
+vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 textureColour) {
+  // Point light calculates direction based on positional difference
+  vec3 lightDir = normalize(light.position - FragPos);
+
+  vec3 ambient = getAmbient(light.ambient, textureColour);
+  vec3 diffuse = getDiffuse(light.diffuse, textureColour, normal, lightDir);
+  vec3 specular = getSpecular(light.specular, normal, lightDir, viewDir);
+
+  float attenuation = getAttenuation(light.position, light.constant, light.linear, light.quadratic);
+  ambient *= attenuation;
+  diffuse *= attenuation;
+  specular *= attenuation;
+  return ambient + diffuse + specular;
 }
 
 void main()
@@ -108,6 +136,6 @@ void main()
   specular *= attenuation;
 
   vec3 result = vec3(0.0);
-  result += calculateDirectionalLight(directionalLight, normal, viewDir);
+  result += calculateDirectionalLight(directionalLight, normal, viewDir, textureColour);
   FragColor = vec4(result, 1.0);
 }
