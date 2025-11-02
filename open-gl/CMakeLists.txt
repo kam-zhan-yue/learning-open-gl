@@ -23,21 +23,30 @@ target_include_directories(stb_image PUBLIC includes)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE includes)
 
+# FetchContent stuff
+include(FetchContent)
+
 # -----------------------------
-# Assimp
+# Assimp (via FetchContent)
 # -----------------------------
+FetchContent_Declare(
+  assimp
+  GIT_REPOSITORY https://github.com/assimp/assimp.git
+  GIT_TAG master
+)
+
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
 set(ASSIMP_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
 set(ASSIMP_NO_EXPORT ON CACHE INTERNAL "" FORCE)
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE INTERNAL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE INTERNAL "" FORCE)
 set(ASSIMP_BUILD_ZLIB ON CACHE INTERNAL "" FORCE)
-add_subdirectory(external/assimp)
+
+FetchContent_MakeAvailable(assimp)
 
 # -----------------------------
 # GLFW (via FetchContent)
 # -----------------------------
-include(FetchContent)
 
 FetchContent_Declare(
   glfw
