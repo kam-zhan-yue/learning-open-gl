@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <learnopengl/shader.h>
 #include <learnopengl/camera.h>
+#include <learnopengl/model.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stbi_image.h>
@@ -121,7 +122,7 @@ int main() {
     },
   };
 
-
+  Model backpack = Model("/objects/backpack/backpack.obj");
 
   // Create a render loop that swaps the front/back buffers and polls for user events
   // Necessary to prevent the window from closing instantly
