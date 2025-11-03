@@ -84,6 +84,7 @@ public:
       }
 
       shader.setInt(("material." + name + number).c_str(), i);
+      shader.setFloat("material.shininess", 32.0f);
       glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
 
