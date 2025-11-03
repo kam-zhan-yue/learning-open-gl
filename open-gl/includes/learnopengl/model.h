@@ -134,7 +134,7 @@ private:
         }
       }
 
-      if (!skip) continue;
+      if (skip) continue;
 
       Texture texture;
       texture.id = loadTexture(str.C_Str(), this->directory);

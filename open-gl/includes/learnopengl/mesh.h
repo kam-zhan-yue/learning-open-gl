@@ -36,6 +36,11 @@ public:
     this->indices = indices;
     this->textures = textures;
 
+    std::cout << "Textures are:" << std::endl;
+    for (unsigned int i=0; i<textures.size(); ++i) {
+      std::cout << textures[i].path << std::endl;
+    }
+
     setupMesh();
   }
 

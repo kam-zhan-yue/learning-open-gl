@@ -11,6 +11,8 @@
 #include <array>
 #include <algorithm>
 
+using std::string;
+
 // Data Structures
 struct WorldData {
   glm::vec3 cubePositions[10];
@@ -24,6 +26,7 @@ unsigned int setupVAO();
 unsigned int setupLightVAO();
 unsigned int loadTexture(char const *path);
 std::array<unsigned int, 2> setupTextures();
+void renderModel(Model &model, Shader &shader);
 void renderLight(Shader &shader, unsigned int VAO, WorldData world);
 void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world);
 void mouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -122,6 +125,7 @@ int main() {
     },
   };
 
+  Shader backpackShader = Shader((string(SHADER_DIR) + "/model-vertex.glsl").c_str(), (string(SHADER_DIR) + "/model-fragment.glsl").c_str());
   Model backpack = Model("/objects/backpack/backpack.obj");
 
   // Create a render loop that swaps the front/back buffers and polls for user events
@@ -138,6 +142,7 @@ int main() {
     // rendering commands
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    renderModel(backpack, backpackShader);
     renderLight(lightShader, LIGHT_VAO, world);
     renderRectangle(shader, VAO, textures, mixAmount, world);
 
@@ -351,16 +356,29 @@ std::array<unsigned int, 2> setupTextures() {
   return textures;
 }
 
+void renderModel(Model &model, Shader &shader) {
+  shader.use();
+
+  glm::mat4 view = camera.getLookAt();
+  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+  glm::mat4 modelMatrix = glm::mat4(1.0);
+
+  shader.setMat4("view", view);
+  shader.setMat4("projection", projection);
+  shader.setMat4("model", modelMatrix);
+
+  model.draw(shader);
+  /*std::cout << "Drawing model" << std::endl;*/
+}
+
 void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
   glm::mat4 view = camera.getLookAt();
   glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 
   shader.use();
 
-  unsigned int viewLoc = glGetUniformLocation(shader.ID, "view");
-  glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-  unsigned int projectionLoc = glGetUniformLocation(shader.ID, "projection");
-  glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+  shader.setMat4("view", view);
+  shader.setMat4("projection", projection);
 
   // Render the lights
   glBindVertexArray(VAO);
@@ -368,9 +386,7 @@ void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, world.lightPositions[i]);
     model = glm::scale(model, glm::vec3(0.2f));
-
-    unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    shader.setMat4("model", model);
     glDrawArrays(GL_TRIANGLES, 0, 36);
   }
 }
