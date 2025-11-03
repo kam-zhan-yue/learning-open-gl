@@ -28,7 +28,6 @@ unsigned int loadTexture(char const *path);
 std::array<unsigned int, 2> setupTextures();
 void renderModel(Model &model, Shader &shader, WorldData world);
 void renderLight(Shader &shader, unsigned int VAO, WorldData world);
-void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world);
 void mouseCallback(GLFWwindow *window, double xPos, double yPos);
 void scrollCallback(GLFWwindow *window, double xPos, double yPos);
 
@@ -100,23 +99,11 @@ int main() {
 
   float mixAmount = 0.2f;
 
-  unsigned int VAO = setupVAO();
   unsigned int LIGHT_VAO = setupLightVAO();
   std::array<unsigned int, 2> textures = setupTextures();
 
   WorldData world = {
-    {
-      glm::vec3( 0.0f,  0.0f,   0.0f),
-      glm::vec3( 2.0f,  5.0f, -15.0f),
-      glm::vec3(-1.5f, -2.2f,  -2.5f),
-      glm::vec3(-3.8f, -2.0f, -12.3f),
-      glm::vec3( 2.4f, -0.4f,  -3.5f),
-      glm::vec3(-1.7f,  3.0f,  -7.5f),
-      glm::vec3( 1.3f, -2.0f,  -2.5f),
-      glm::vec3( 1.5f,  2.0f,  -2.5f),
-      glm::vec3( 1.5f,  0.2f,  -1.5f),
-      glm::vec3(-1.3f,  1.0f,  -1.5f)
-    },
+    {},
     {
       glm::vec3( 0.7f,  0.2f,  2.0f),
       glm::vec3( 2.3f, -3.3f, -4.0f),
@@ -144,7 +131,6 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     renderModel(backpack, backpackShader, world);
     renderLight(lightShader, LIGHT_VAO, world);
-    renderRectangle(shader, VAO, textures, mixAmount, world);
 
     // check events and swap buffers
     glfwSwapBuffers(window);
@@ -450,54 +436,6 @@ void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
     model = glm::translate(model, world.lightPositions[i]);
     model = glm::scale(model, glm::vec3(0.2f));
     shader.setMat4("model", model);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-  }
-}
-
-void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world) {
-  // The model matrix transforms the local space to the world space
-  glm::mat4 view = camera.getLookAt();
-  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
-  glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
-
-  // Light Colours and Direction
-  glm::vec3 lightColour = glm::vec3(1.0);
-  glm::vec3 ambientColour = lightColour * 0.2f;
-  glm::vec3 diffuseColour = lightColour * 0.5f;
-  glm::vec3 lightDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
-
-  shader.use();
-  sendLightData(shader, world);
-
-  // Material Parameters
-  shader.setInt("material.diffuse", 0);
-  shader.setInt("material.specular", 1);
-  shader.setFloat("material.shininess", 32.0f);
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, textures[0]);
-
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-  unsigned int viewLoc = glGetUniformLocation(shader.ID, "view");
-  glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-  unsigned int projectionLoc = glGetUniformLocation(shader.ID, "projection");
-  glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-  unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
-  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-  // Render the cubes
-  glBindVertexArray(VAO);
-  for (unsigned int i = 0; i < 10; ++i) {
-    glm::mat4 model = glm::mat4(1.0f);
-    float angle = i * 20.0f;
-    model = glm::translate(model, world.cubePositions[i]);
-    model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-
-    unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glDrawArrays(GL_TRIANGLES, 0, 36);
   }
 }
