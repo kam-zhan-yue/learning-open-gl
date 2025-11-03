@@ -26,7 +26,7 @@ unsigned int setupVAO();
 unsigned int setupLightVAO();
 unsigned int loadTexture(char const *path);
 std::array<unsigned int, 2> setupTextures();
-void renderModel(Model &model, Shader &shader);
+void renderModel(Model &model, Shader &shader, WorldData world);
 void renderLight(Shader &shader, unsigned int VAO, WorldData world);
 void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world);
 void mouseCallback(GLFWwindow *window, double xPos, double yPos);
@@ -142,7 +142,7 @@ int main() {
     // rendering commands
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    renderModel(backpack, backpackShader);
+    renderModel(backpack, backpackShader, world);
     renderLight(lightShader, LIGHT_VAO, world);
     renderRectangle(shader, VAO, textures, mixAmount, world);
 
@@ -356,53 +356,13 @@ std::array<unsigned int, 2> setupTextures() {
   return textures;
 }
 
-void renderModel(Model &model, Shader &shader) {
-  shader.use();
-
-  glm::mat4 view = camera.getLookAt();
-  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
-  glm::mat4 modelMatrix = glm::mat4(1.0);
-
-  shader.setMat4("view", view);
-  shader.setMat4("projection", projection);
-  shader.setMat4("model", modelMatrix);
-
-  model.draw(shader);
-}
-
-void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
-  glm::mat4 view = camera.getLookAt();
-  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
-
-  shader.use();
-
-  shader.setMat4("view", view);
-  shader.setMat4("projection", projection);
-
-  // Render the lights
-  glBindVertexArray(VAO);
-  for (unsigned int i = 0; i < 4; ++i) {
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, world.lightPositions[i]);
-    model = glm::scale(model, glm::vec3(0.2f));
-    shader.setMat4("model", model);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-  }
-}
-
-void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world) {
-  // The model matrix transforms the local space to the world space
-  glm::mat4 view = camera.getLookAt();
-  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
-  glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
-
+void sendLightData(Shader &shader, WorldData world) {
   // Light Colours and Direction
   glm::vec3 lightColour = glm::vec3(1.0);
   glm::vec3 ambientColour = lightColour * 0.2f;
   glm::vec3 diffuseColour = lightColour * 0.5f;
   glm::vec3 lightDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
 
-  shader.use();
   shader.setVec3("viewPos", camera.cameraPos);
   
   // Directional Light Parameters
@@ -456,6 +416,58 @@ void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 
   shader.setFloat("spotLight.constant", 1.0f);
   shader.setFloat("spotLight.linear", 0.09f);
   shader.setFloat("spotLight.quadratic", 0.032f);
+}
+
+void renderModel(Model &model, Shader &shader, WorldData world) {
+  shader.use();
+
+  glm::mat4 view = camera.getLookAt();
+  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+  glm::mat4 modelMatrix = glm::mat4(1.0);
+
+  shader.setMat4("view", view);
+  shader.setMat4("projection", projection);
+  shader.setMat4("model", modelMatrix);
+
+  sendLightData(shader, world);
+
+  model.draw(shader);
+}
+
+void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
+  glm::mat4 view = camera.getLookAt();
+  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+
+  shader.use();
+
+  shader.setMat4("view", view);
+  shader.setMat4("projection", projection);
+
+  // Render the lights
+  glBindVertexArray(VAO);
+  for (unsigned int i = 0; i < 4; ++i) {
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, world.lightPositions[i]);
+    model = glm::scale(model, glm::vec3(0.2f));
+    shader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+  }
+}
+
+void renderRectangle(Shader &shader, unsigned int VAO, std::array<unsigned int, 2> textures, float mixAmount, WorldData world) {
+  // The model matrix transforms the local space to the world space
+  glm::mat4 view = camera.getLookAt();
+  glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+  glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
+
+  // Light Colours and Direction
+  glm::vec3 lightColour = glm::vec3(1.0);
+  glm::vec3 ambientColour = lightColour * 0.2f;
+  glm::vec3 diffuseColour = lightColour * 0.5f;
+  glm::vec3 lightDirection = glm::vec3(-0.2f, -1.0f, -0.3f);
+
+  shader.use();
+  sendLightData(shader, world);
 
   // Material Parameters
   shader.setInt("material.diffuse", 0);
