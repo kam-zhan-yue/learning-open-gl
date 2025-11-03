@@ -36,11 +36,6 @@ public:
     this->indices = indices;
     this->textures = textures;
 
-    std::cout << "Textures are:" << std::endl;
-    for (unsigned int i=0; i<textures.size(); ++i) {
-      std::cout << textures[i].path << std::endl;
-    }
-
     setupMesh();
   }
 
@@ -69,7 +64,7 @@ public:
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
 
     glBindVertexArray(0);
   }
@@ -88,7 +83,7 @@ public:
         number = std::to_string(specularNum++);
       }
 
-      shader.setFloat(("material." + name + number).c_str(), i);
+      shader.setInt(("material." + name + number).c_str(), i);
       glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
 

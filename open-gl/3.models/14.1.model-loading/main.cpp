@@ -368,7 +368,6 @@ void renderModel(Model &model, Shader &shader) {
   shader.setMat4("model", modelMatrix);
 
   model.draw(shader);
-  /*std::cout << "Drawing model" << std::endl;*/
 }
 
 void renderLight(Shader &shader, unsigned int VAO, WorldData world) {
