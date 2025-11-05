@@ -197,12 +197,16 @@ int main() {
 
     // Render
     // ------
+    float near = 0.1f;
+    float far = 100.0f;
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.getLookAt();
-    glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, near, far);
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
+    shader.setFloat("near", near);
+    shader.setFloat("far", far);
 
     // Draw cubes
     // -----------
