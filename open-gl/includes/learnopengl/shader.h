@@ -15,71 +15,33 @@ public:
 	// the program ID
 	unsigned int ID;
 	
-	// constructor reads and builds the shader
-  Shader(const char* vertexPath, const char* fragmentPath) {
-    // 1: Retrieve the vertex / fragment source code from the filepaths
-    std::string vertexCode;
-    std::string fragmentCode;
-    std::ifstream vShaderFile;
-    std::ifstream fShaderFile;
-    
-    // Ensure ifstream objects can throw exceptions
-    vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    
-    try {
-      // Open files
-      vShaderFile.open(vertexPath);
-      fShaderFile.open(fragmentPath);
-    
-      // Read files' buffer contents into stream
-      std::stringstream vShaderStream, fShaderStream;
-      vShaderStream << vShaderFile.rdbuf();
-      fShaderStream << fShaderFile.rdbuf();
-    
-      // Close file handlers
-      vShaderFile.close();
-      fShaderFile.close();
-      
-      // Convert stream into string
-      vertexCode = vShaderStream.str();
-      fragmentCode = fShaderStream.str();
-    } catch(std::ifstream::failure e) {
-      std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
-    }
+  Shader(const char* vertexPath, const char* geometryPath, const char* fragmentPath) {
+    unsigned int vertex = generateShader(vertexPath, GL_VERTEX_SHADER);
+    unsigned int geometry = generateShader(geometryPath, GL_GEOMETRY_SHADER);
+    unsigned int fragment = generateShader(fragmentPath, GL_FRAGMENT_SHADER);
 
-    /*std::cout << "Vertex Path is:\n" << vertexPath << std::endl;*/
-    /*std::cout << "Vertex Code is:\n" << vertexCode << std::endl;*/
-    /*std::cout << "Fragment Code is:\n" << fragmentCode << std::endl;*/
-    
-    const char* vShaderCode = vertexCode.c_str();
-    const char* fShaderCode = fragmentCode.c_str();
-    // 2 - Compile Shaders
-    unsigned int vertex, fragment;
+    ID = glCreateProgram();
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, geometry);
+    glAttachShader(ID, fragment);
+    glLinkProgram(ID);
+
     int success;
     char infoLog[512];
-
-    // Vertex Shader
-    vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vShaderCode, NULL);
-    glCompileShader(vertex);
-
-    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
     if (!success) {
-      glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-      std::cout << "ERROR:SHADER::VERTEX::COMPILATION_FAILURE\n" << infoLog << std::endl;
+      glGetProgramInfoLog(ID, 512, NULL, infoLog);
+      std::cout << "ERROR:SHADER::PROGRAM::LINKING_FAILURE\n" << infoLog << std::endl;
     }
+    glDeleteShader(vertex);
+    glDeleteShader(geometry);
+    glDeleteShader(fragment);
+  }
 
-    // Fragment Shader
-    fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fShaderCode, NULL);
-    glCompileShader(fragment);
-
-    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-    if (!success) {
-      glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-      std::cout << "ERROR:SHADER::FRAGMENT::COMPILATION_FAILURE\n" << infoLog << std::endl;
-    }
+	// constructor reads and builds the shader
+  Shader(const char* vertexPath, const char* fragmentPath) {
+    unsigned int vertex = generateShader(vertexPath, GL_VERTEX_SHADER);
+    unsigned int fragment = generateShader(fragmentPath, GL_FRAGMENT_SHADER);
 
     // 3 - Link Shader
     ID = glCreateProgram();
@@ -87,6 +49,8 @@ public:
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
 
+    int success;
+    char infoLog[512];
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
     if (!success) {
       glGetProgramInfoLog(ID, 512, NULL, infoLog);
@@ -128,6 +92,68 @@ public:
     unsigned int loc = glGetUniformLocation(ID, name.c_str());
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
   };
+
+private:
+  unsigned int generateShader(const char *path, unsigned int SHADER_TYPE) {
+    // 1: Retrieve the vertex / fragment source code from the filepaths
+    std::string shaderCode;
+    std::ifstream shaderFile;
+    
+    // Ensure ifstream objects can throw exceptions
+    shaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
+    
+    try {
+      // Open files
+      shaderFile.open(path);
+    
+      // Read files' buffer contents into stream
+      std::stringstream shaderStream;
+      shaderStream << shaderFile.rdbuf();
+    
+      // Close file handlers
+      shaderFile.close();
+      
+      // Convert stream into string
+      shaderCode = shaderStream.str();
+    } catch(std::ifstream::failure e) {
+      std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+    }
+
+    const char* code = shaderCode.c_str();
+    // 2 - Compile Shaders
+    unsigned int shader;
+    int success;
+    char infoLog[512];
+
+    // Vertex Shader
+    shader = glCreateShader(SHADER_TYPE);
+    glShaderSource(shader, 1, &code, NULL);
+    glCompileShader(shader);
+
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+      glGetShaderInfoLog(shader, 512, NULL, infoLog);
+      std::string shaderTypeStr;
+      switch (SHADER_TYPE) {
+        case GL_VERTEX_SHADER:
+          shaderTypeStr = "VERTEX";
+          break;
+        case GL_FRAGMENT_SHADER:
+          shaderTypeStr = "FRAGMENT";
+          break;
+        case GL_GEOMETRY_SHADER:
+          shaderTypeStr = "GEOMETRY";
+          break;
+        default:
+          shaderTypeStr = "UNKNOWN";
+          break;
+      }
+      std::cout << "ERROR:SHADER::VERTEX::COMPILATION_FAILURE\n" << infoLog << std::endl;
+    }
+
+    return shader;
+    return 0;
+  }
 };
 
 #endif

@@ -77,75 +77,36 @@ int main() {
   glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);
 
-  // Same effect
-  /*glCullFace(GL_BACK);*/
-
   // Setup Shader
   // -----------
-  Shader shader((std::string(SHADER_DIR) + "/vertex.glsl").c_str(), (std::string(SHADER_DIR) + "/fragment.glsl").c_str());
-  shader.use();
-  shader.setInt("texture1", 0);
+  Shader shader(
+    (std::string(SHADER_DIR) + "/vertex.glsl").c_str(),
+    (std::string(SHADER_DIR) + "/geometry.glsl").c_str(),
+    (std::string(SHADER_DIR) + "/fragment.glsl").c_str()
+  );
 
-  float vertices[] = {
-    // back face
-    -0.5f, -0.5f, -0.5f,
-    0.5f,  0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-    // front face
-    -0.5f, -0.5f,  0.5f,
-    0.5f, -0.5f,  0.5f,
-    0.5f,  0.5f,  0.5f,
-    0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-    // left face
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    // right face
-    0.5f,  0.5f,  0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f,  0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f,  0.5f,  0.5f,
-    0.5f, -0.5f,  0.5f,
-    // bottom face
-    -0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f,  0.5f,
-    0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f, -0.5f,
-    // top face
-    -0.5f,  0.5f, -0.5f,
-    0.5f,  0.5f,  0.5f,
-    0.5f,  0.5f, -0.5f,
-    0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f,  0.5f,  0.5,
+  // Points
+  // --------
+  float points[] = {
+    -0.5f, 0.5f,
+    0.5f, 0.5f,
+    0.5f, -0.5f,
+    -0.5f, -0.5f,
   };
 
-  // Cube VAO
-  // --------
-  unsigned int cubeVAO, cubeVBO;
+  unsigned int VAO, VBO;
   // 1. generate
-  glGenVertexArrays(1, &cubeVAO);
-  glGenBuffers(1, &cubeVBO);
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
 
   // 2. bind
-  glBindVertexArray(cubeVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 
   // 3. populate vertex data
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
   // 4. unbind
   glBindVertexArray(0);
@@ -172,8 +133,8 @@ int main() {
     shader.setMat4("view", camera.getLookAt());
     shader.setMat4("projection", getProjection());
     shader.setMat4("model", glm::mat4(1.0));
-    glBindVertexArray(cubeVAO);
-    glDrawArrays(GL_POINTS, 0, 36);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, 4);
 
     glBindVertexArray(0);
 
@@ -184,8 +145,8 @@ int main() {
 
   // Deallocation
   // ------------
-  glDeleteVertexArrays(1, &cubeVAO);
-  glDeleteBuffers(1, &cubeVBO);
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteBuffers(1, &VBO);
 
   // Terminate and clean up all resources glfwTerminate();
   glfwTerminate();
