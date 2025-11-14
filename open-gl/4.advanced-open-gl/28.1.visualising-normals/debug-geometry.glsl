@@ -1,36 +1,32 @@
 #version 330 core
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
+layout (line_strip, max_vertices = 6) out;
 
 in V_OUT {
-  // vec3 Normal;
-  vec2 TexCoords;
+  vec3 Normal;
 } g_in[];
 
-out G_OUT {
-  vec2 TexCoords;
-} g_out;
+uniform mat4 projection;
 
-vec3 getNormal() {
-  vec3 a = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
-  vec3 b = vec3(gl_in[1].gl_Position) - vec3(gl_in[2].gl_Position);
-  return normalize(cross(a, b));
-}
+const float MAGNITUDE = 0.4;
 
-void main() {
-  vec3 normal = getNormal();
-  gl_Position = gl_in[0].gl_Position, normal;
-  g_out.TexCoords = g_in[0].TexCoords;
+void generateLine(int index) {
+  vec4 vertexPos = gl_in[index].gl_Position;
+
+  // Origin Point
+  gl_Position = projection * vertexPos;
   EmitVertex();
 
-  gl_Position = gl_in[1].gl_Position, normal;
-  g_out.TexCoords = g_in[1].TexCoords;
-  EmitVertex();
-
-  gl_Position = gl_in[2].gl_Position, normal;
-  g_out.TexCoords = g_in[2].TexCoords;
+  // Origin Point + Normal Vector
+  gl_Position = projection * (vertexPos + vec4(g_in[index].Normal, 0.0) * MAGNITUDE);
   EmitVertex();
 
   EndPrimitive();
+}
+
+void main() {
+  generateLine(0);
+  generateLine(1);
+  generateLine(2);
 }

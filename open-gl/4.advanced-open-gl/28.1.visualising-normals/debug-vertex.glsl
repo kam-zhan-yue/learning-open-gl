@@ -8,11 +8,11 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out V_OUT {
-  vec2 TexCoords;
+  vec3 Normal;
 } v_out;
 
-void main()
-{
-  gl_Position = projection * view * model * vec4(aPos, 1.0);
-  v_out.TexCoords = aTexCoords;
+void main() {
+  gl_Position = view * model * vec4(aPos, 1.0);
+  mat3 normalMatrix = mat3(transpose(inverse(view * model)));
+  v_out.Normal = normalize(vec3(vec4(normalMatrix * aNormal, 0.0)));
 }
