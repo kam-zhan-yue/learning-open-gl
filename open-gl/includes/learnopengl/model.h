@@ -20,6 +20,9 @@ using glm::vec2;
 
 class Model {
 public:
+  // model data - make public to insert instanced vertex attributes
+  vector<Mesh> meshes;
+
   Model(const char *path) {
     loadModel(path);
     std::cout << "Loaded " << path << std::endl;
@@ -31,8 +34,6 @@ public:
   }
 
 private:
-  // model data
-  vector<Mesh> meshes;
   vector<Texture> loadedTextures;
   string directory;
 

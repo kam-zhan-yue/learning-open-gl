@@ -69,7 +69,7 @@ public:
     glBindVertexArray(0);
   }
 
-  void draw(Shader &shader) {
+  void setMaterial(Shader &shader) {
     unsigned int diffuseNum = 1;
     unsigned int specularNum = 1;
 
@@ -89,6 +89,10 @@ public:
     }
 
     glActiveTexture(GL_TEXTURE0);
+  }
+
+  void draw(Shader &shader) {
+    setMaterial(shader);
 
     // draw mesh
     glBindVertexArray(VAO);

@@ -33,6 +33,10 @@ public:
     return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
   }
 
+  glm::mat4 getPerspective() {
+    return glm::perspective(glm::radians(zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+  }
+
   void process(GLFWwindow *window, float &deltaTime) {
     const float speed = cameraSpeed * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
