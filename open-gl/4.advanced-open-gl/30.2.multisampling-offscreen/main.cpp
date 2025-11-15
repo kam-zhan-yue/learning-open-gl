@@ -38,7 +38,7 @@ GLFWwindow *init() {
   #endif
 
   // Hint for multisampling
-  /*glfwWindowHint(GLFW_SAMPLES, 4);*/
+  glfwWindowHint(GLFW_SAMPLES, 4);
 
   // Create a window object
   GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
@@ -79,7 +79,7 @@ int main() {
   glEnable(GL_STENCIL_TEST);
   glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);
-  /*glEnable(GL_MULTISAMPLE);*/
+  glEnable(GL_MULTISAMPLE);
 
   // Setup Shader
   // -----------
@@ -180,24 +180,24 @@ int main() {
   glGenFramebuffers(1, &FBO);
   glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
+  int width = 800;
+  int height = 600;
   // generate framebuffer texture attachment
   unsigned int frameTexture;
   glGenTextures(1, &frameTexture);
-  glBindTexture(GL_TEXTURE_2D, frameTexture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameTexture);
+  glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, 800, 600, GL_TRUE);
+  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
   // attach a depth and stencil attachment to the framebuffer using a renderbuffer
   unsigned int RBO;
   glGenRenderbuffers(1, &RBO);
   glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+  glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, 800, 600);
   glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
   // Attach the texture buffer to the colour buffer
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameTexture, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, frameTexture, 0);
   // Attach the render buffer to the depth and stencil buffers
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
@@ -214,6 +214,22 @@ int main() {
   );
   screenShader.use();
   screenShader.setInt("framebuffer", 0);
+
+  // Intermediate FBO that takes the blitted mutlisampled framebuffer and converts it into a texture for post processing.
+  unsigned int intermediateFBO;
+  glGenFramebuffers(1, &intermediateFBO);
+  glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO);
+  // create a texture colour attachment for the framebuffer
+  unsigned int screenTexture;
+  glGenTextures(1, &screenTexture);
+  glBindTexture(GL_TEXTURE_2D, screenTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);	// we only need a color buffer
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    std::cout << "ERROR::FRAMEBUFFER:: Intermediate framebuffer is not complete!" << std::endl;
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // Create a render loop that swaps the front/back buffers and polls for user events
   // Necessary to prevent the window from closing instantly
@@ -238,13 +254,18 @@ int main() {
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 
+    // blit the multisampled buffer into an intermediate FBO
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
     // second pass - draw framebuffer to the screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // don't forget to clear the stencil buffer!
     screenShader.use();
     glBindVertexArray(quadVAO);
-    glBindTexture(GL_TEXTURE_2D, frameTexture);
+    glBindTexture(GL_TEXTURE_2D, screenTexture);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     
