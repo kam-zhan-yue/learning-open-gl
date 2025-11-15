@@ -67,8 +67,8 @@ public:
 
   void processScroll(double xOffset, double yOffset) {
     zoom -= (float)yOffset;
-    if (zoom < 1.0f)
-      zoom = 1.0f;
+    if (zoom < 0.01f)
+      zoom = 0.01f;
     if (zoom > 45.0f)
       zoom = 45.0f;
   }
