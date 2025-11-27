@@ -435,7 +435,7 @@ void processInput(GLFWwindow *window, float &deltaTime) {
     blinnKeyPressed = false;
   }
 
-  /*camera.process(window, deltaTime);*/
+  camera.process(window, deltaTime);
 }
 
 void mouseCallback(GLFWwindow *window, double xPos, double yPos) {

@@ -22,6 +22,12 @@ float shadowCalculation(float bias) {
 
   // transform the NDC coordinates to the range [0, 1] to compare with depth map
   projCoords = projCoords * 0.5 + 0.5;
+
+  // Oversampling - If the coordinates are outside of the camera's orthographic frustum, they should not be in the shadow
+  if (projCoords.z > 1.0) {
+    return 0.0;
+  }
+
   float closestDepth = texture(shadowMap, projCoords.xy).r;
   float currentDepth = projCoords.z;
 
