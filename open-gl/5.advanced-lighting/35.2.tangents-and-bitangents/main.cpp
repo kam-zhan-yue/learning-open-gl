@@ -106,10 +106,11 @@ int main() {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, (float)glfwGetTime(), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
     // Render scene
     shader.use();
-    /*shader.setMat4("model", glm::rotate(glm::mat4(1.0), (float)glm::radians(90.0), glm::vec3(1.0, 0.0, 0.0)));*/
-    shader.setMat4("model", glm::mat4(1.0));
+    shader.setMat4("model", model);
     shader.setMat4("view", camera.getLookAt());
     shader.setMat4("projection", camera.getPerspective());
     shader.setVec3("lightPos", lightPos);
