@@ -41,7 +41,7 @@ private:
     // 1. Declare an Importer and call its ReadFile function
     Assimp::Importer import;
     std::string resourcePath = (std::string(RESOURCES_DIR) + path);
-    const aiScene *scene = import.ReadFile(resourcePath, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene *scene = import.ReadFile(resourcePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
     // 2. After loading the model, check if the scene and the root node are not null
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -113,6 +113,9 @@ private:
 
       vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
       textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+      // if using .obj, then we need to use HEIGHT, not NORMALS
+      vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
     }
 
     return Mesh(vertices, indices, textures);
