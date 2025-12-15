@@ -22,10 +22,15 @@ void main() {
   gl_Position = projection * view * model * vec4(aPos, 1.0);
   v_out.texCoords = aTexCoords;
 
+  // Gram-Schmidt method
   mat3 normalMatrix = transpose(inverse(mat3(model)));
   vec3 T = normalize(normalMatrix * aTangent);
-  vec3 B = normalize(normalMatrix * aBitangent);
   vec3 N = normalize(normalMatrix * aNormal);
+  // re-orthogonalise T with respect to N
+  T = normalize(T - dot(T, N) * N);
+  // retrieve B with the cross product of T and N
+  vec3 B = cross(N, T);
+
   mat3 TBN = transpose(mat3(T, B, N));
   v_out.tangentLightPos = TBN * lightPos;
   v_out.tangentViewPos = TBN * viewPos;

@@ -116,6 +116,7 @@ private:
 
       // if using .obj, then we need to use HEIGHT, not NORMALS
       vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+      textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
     }
 
     return Mesh(vertices, indices, textures);
