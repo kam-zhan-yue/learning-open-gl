@@ -13,6 +13,7 @@ uniform vec3 viewPos;
 
 out V_OUT {
   vec2 texCoords;
+  vec3 position;
   vec3 tangentLightPos;
   vec3 tangentViewPos;
   vec3 tangentFragPos;
@@ -20,6 +21,7 @@ out V_OUT {
 
 void main() {
   gl_Position = projection * view * model * vec4(aPos, 1.0);
+  v_out.position = vec3(model * vec4(aPos, 1.0));
   v_out.texCoords = aTexCoords;
 
   // Gram-Schmidt method
@@ -34,5 +36,5 @@ void main() {
   mat3 TBN = transpose(mat3(T, B, N));
   v_out.tangentLightPos = TBN * lightPos;
   v_out.tangentViewPos = TBN * viewPos;
-  v_out.tangentFragPos = TBN * vec3(model * vec4(aPos, 1.0));
+  v_out.tangentFragPos = TBN * v_out.position;
 }

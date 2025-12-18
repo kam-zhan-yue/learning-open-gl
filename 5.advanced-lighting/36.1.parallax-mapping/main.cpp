@@ -79,8 +79,9 @@ int main() {
     (string(SHADER_DIR) + "/wall-fragment.glsl").c_str()
   );
 
-  unsigned int brickWallTexture = loadTexture("/textures/brickwall.jpg");
-  unsigned int brickWallNormalTexture = loadTexture("/textures/brickwall_normal.jpg");
+  unsigned int brickTexture = loadTexture("/textures/bricks2.jpg");
+  unsigned int brickNormal = loadTexture("/textures/bricks2_normal.jpg");
+  unsigned int brickDepth = loadTexture("/textures/bricks2_disp.jpg");
 
   vec3 lightPos(0.5f, 1.0f, 0.3f);
 
@@ -88,6 +89,7 @@ int main() {
   shader.use();
   shader.setInt("diffuseMap", 0);
   shader.setInt("normalMap", 1);
+  shader.setInt("depthMap", 2);
 
   unsigned int wallVAO = generateWall();
 
@@ -107,7 +109,7 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, (float)glfwGetTime(), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+    /*model = glm::rotate(model, (float)glfwGetTime(), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));*/
     // Render scene
     shader.use();
     shader.setMat4("model", model);
@@ -115,10 +117,13 @@ int main() {
     shader.setMat4("projection", camera.getPerspective());
     shader.setVec3("lightPos", lightPos);
     shader.setVec3("viewPos", camera.cameraPos);
+    shader.setFloat("depthScale", 0.2);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, brickWallTexture);
+    glBindTexture(GL_TEXTURE_2D, brickTexture);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, brickWallNormalTexture);
+    glBindTexture(GL_TEXTURE_2D, brickNormal);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, brickDepth);
     glBindVertexArray(wallVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
