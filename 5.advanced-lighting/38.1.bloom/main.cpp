@@ -47,7 +47,7 @@ struct Scene {
 unsigned int generateWall();
 Scene generateScene();
 void renderScene(Scene scene);
-void renderQuad(Scene scene);
+void renderQuad(GameObject quad);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window, float &deltaTime);
 unsigned int loadTexture(char const *path);
@@ -137,12 +137,25 @@ int main() {
     bool horizontal = true, first_iteration = true;
     int amount = 10;
     scene.blur.shader.use();
-
+    for (unsigned int i=0; i<amount; i++) {
+      glBindFramebuffer(GL_FRAMEBUFFER, scene.buffers.pingpongFBO[horizontal]);
+      scene.blur.shader.setBool("horizontal", horizontal);
+      glBindTexture(GL_TEXTURE_2D, first_iteration ? scene.buffers.colorBuffers[1] : scene.buffers.pingpongTextures[!horizontal]);
+      renderQuad(scene.quad);
+      horizontal = !horizontal;
+      first_iteration = false;
+    }
 
     // 3. render the colour buffer to the screen with a tonemap
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      renderQuad(scene);
+      scene.quad.shader.use();
+      scene.quad.shader.setInt("colorBuffer", 0);
+      scene.quad.shader.setFloat("exposure", 0.1);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, scene.buffers.pingpongTextures[1]); // mathematically the last one is the final blur
+      renderQuad(scene.quad);
 
     // check events and swap buffers
     glfwSwapBuffers(window);
@@ -427,13 +440,8 @@ void renderScene(Scene scene) {
   }
 }
 
-void renderQuad(Scene scene) {
-  scene.quad.shader.use();
-  scene.quad.shader.setInt("colorBuffer", 0);
-  scene.quad.shader.setFloat("exposure", 0.1);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, scene.buffers.colorBuffers[0]);
-  glBindVertexArray(scene.quad.VAO);
+void renderQuad(GameObject quad) {
+  glBindVertexArray(quad.VAO);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glBindVertexArray(0);
 }
