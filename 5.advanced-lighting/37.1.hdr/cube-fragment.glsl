@@ -17,11 +17,10 @@ uniform sampler2D diffuseTexture;
 out vec4 FragColor;
 
 void main() {
-  float gamma = 2.2;
   vec3 colour = texture(diffuseTexture, f_in.texCoords).rgb;
 
   // ambient
-  vec3 ambient = 0.1 * colour;
+  vec3 ambient = 0.01 * colour;
   vec3 diffuse = vec3(0.0);
 
   for (int i=0; i<16; i++) {
@@ -36,5 +35,5 @@ void main() {
   }
 
   vec3 lighting = ambient + diffuse;
-  FragColor = vec4(pow(lighting, vec3(1.0)/gamma), 1.0);
+  FragColor = vec4(lighting, 1.0);
 }
