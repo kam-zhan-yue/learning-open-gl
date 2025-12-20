@@ -318,6 +318,7 @@ void renderTunnel(Scene scene) {
 void renderQuad(Scene scene) {
   scene.quad.shader.use();
   scene.quad.shader.setInt("colorBuffer", 0);
+  scene.quad.shader.setFloat("exposure", 0.1);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, scene.colorBuffer);
   glBindVertexArray(scene.quad.VAO);

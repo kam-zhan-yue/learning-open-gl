@@ -3,6 +3,7 @@
 in vec2 texCoords;
 
 uniform sampler2D colorBuffer;
+uniform float exposure;
 
 out vec4 FragColor;
 
@@ -11,7 +12,7 @@ void main() {
   vec3 hdr = texture(colorBuffer, texCoords).rgb;
 
   // reinhard tone mapping
-  vec3 mapped = hdr / (hdr + vec3(1.0));
+  vec3 mapped = vec3(1.0) - exp(-hdr * exposure);
   mapped = pow(mapped, vec3(1.0 / gamma));
   FragColor = vec4(mapped, 1.0);
 }
