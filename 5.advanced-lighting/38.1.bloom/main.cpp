@@ -125,7 +125,7 @@ int main() {
     processInput(window, deltaTime);
 
     // Reset the buffer from the previous render!
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // 1. render the scene to the framebuffer
@@ -148,12 +148,14 @@ int main() {
 
     // 3. render the colour buffer to the screen with a tonemap
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       scene.quad.shader.use();
       scene.quad.shader.setInt("colorBuffer", 0);
+      scene.quad.shader.setInt("blurBuffer", 1);
       scene.quad.shader.setFloat("exposure", 0.1);
       glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, scene.buffers.colorBuffers[0]); // the original framebuffer
+      glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, scene.buffers.pingpongTextures[1]); // mathematically the last one is the final blur
       renderQuad(scene.quad);
 
