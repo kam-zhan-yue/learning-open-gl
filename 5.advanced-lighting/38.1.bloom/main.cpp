@@ -64,8 +64,6 @@ Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 const float SCREEN_WIDTH = 800;
 const float SCREEN_HEIGHT = 600;
 
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-
 GLFWwindow *init() {
   // Init GLFW and set the context variables
   glfwInit();
@@ -92,7 +90,7 @@ GLFWwindow *init() {
   }
 
   // Tell OpenGL the size of the rendering window so that OpenGL knows how we want to display the data and coordinates
-  glViewport(0, 0, 800, 600);
+  /*glViewport(0, 0, 800, 600);*/
 
   // Register the frame buffer size callback when the user resizes the window
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
