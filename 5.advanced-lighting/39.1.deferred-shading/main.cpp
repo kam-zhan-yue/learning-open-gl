@@ -127,6 +127,7 @@ void geometryPass(Scene scene) {
 }
 
 void lightingPass(Scene scene) {
+  // Deferred Pass
   Shader screen = scene.shaders.screen;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -148,11 +149,26 @@ void lightingPass(Scene scene) {
   renderQuad(scene.vertices.quad);
 }
 
+void deferredRendering(Scene scene) {
+  geometryPass(scene);
+  lightingPass(scene);
+}
+
+// NOTE: This does not support window resizing
+void forwardRendering(Scene scene) {
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.buffers.gBuffer);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  // Forward Rendering
+  renderLights(scene);
+}
+
 int main() {
   GLFWwindow *window = init(); // Configue Global State glEnable(GL_DEPTH_TEST);
-  glEnable(GL_BLEND);
+  /*glEnable(GL_BLEND);*/
+  /*glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
   glEnable(GL_DEPTH_TEST);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   Scene scene = generateScene();
 
@@ -171,10 +187,8 @@ int main() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // 1. first pass: g-buffer
-    geometryPass(scene);
-    // 2. second pass: lighting
-    lightingPass(scene);
+    deferredRendering(scene);
+    forwardRendering(scene);
 
     // check events and swap buffers
     glfwSwapBuffers(window);
@@ -273,10 +287,25 @@ Models generateModels() {
 
 Scene generateScene() {
   vector<Light> lights;
-  lights.push_back({ glm::vec3( 0.0f, 0.5f,  1.5f), glm::vec3(5.0f,   5.0f,  5.0f) });
-  lights.push_back({ glm::vec3(-4.0f, 0.5f, -3.0f), glm::vec3(10.0f,  0.0f,  0.0f) });
-  lights.push_back({ glm::vec3( 3.0f, 0.5f,  1.0f), glm::vec3(0.0f,   0.0f,  15.0f) });
-  lights.push_back({ glm::vec3(-.8f,  2.4f, -1.0f), glm::vec3(0.0f,   5.0f,  0.0f) });
+  const unsigned int NR_LIGHTS = 32;
+  std::vector<glm::vec3> lightPositions;
+  std::vector<glm::vec3> lightColors;
+  srand(13);
+  for (unsigned int i = 0; i < NR_LIGHTS; i++)
+  {
+    // calculate slightly random offsets
+    float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+    float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
+    float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+    glm::vec3 lightPosition = glm::vec3(xPos, yPos, zPos);
+    // also calculate random color
+    float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+    float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+    float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+    glm::vec3 lightColor = glm::vec3(rColor, gColor, bColor);
+    lights.push_back({lightPosition, lightColor});
+  }
+
 
   vector<glm::vec3> modelPositions;
   modelPositions.push_back(glm::vec3(-3.0,  -0.5, -3.0));
