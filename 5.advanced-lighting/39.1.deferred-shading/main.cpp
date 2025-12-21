@@ -127,18 +127,24 @@ void geometryPass(Scene scene) {
 }
 
 void lightingPass(Scene scene) {
+  Shader screen = scene.shaders.screen;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  scene.shaders.screen.use();
-  scene.shaders.screen.setInt("positionBuffer", 0);
-  scene.shaders.screen.setInt("normalBuffer", 1);
-  scene.shaders.screen.setInt("albedoBuffer", 2);
+  screen.use();
+  screen.setInt("positionBuffer", 0);
+  screen.setInt("normalBuffer", 1);
+  screen.setInt("albedoBuffer", 2);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, scene.buffers.gPosition);
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, scene.buffers.gNormal);
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, scene.buffers.gColor);
+
+  for (int i=0; i<scene.lights.size(); ++i) {
+    screen.setVec3("lights[" + to_string(i) + "].position", scene.lights[i].position);
+    screen.setVec3("lights[" + to_string(i) + "].colour", scene.lights[i].colour);
+  }
   renderQuad(scene.vertices.quad);
 }
 
