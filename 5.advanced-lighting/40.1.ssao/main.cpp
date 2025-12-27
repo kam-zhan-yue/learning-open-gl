@@ -139,6 +139,7 @@ void ssaoPass(Scene scene) {
   ssao.setInt("positionBuffer", 0);
   ssao.setInt("normalBuffer", 1);
   ssao.setInt("noiseBuffer", 2);
+  ssao.setMat4("projection", camera.getPerspective());
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, scene.buffers.gPosition);
