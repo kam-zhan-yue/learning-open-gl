@@ -17,7 +17,8 @@ struct GameObject {
 struct Light {
   vec3 position;
   vec3 colour;
-  float radius;
+  float linear;
+  float quadratic;
 };
 
 struct GBuffer {
@@ -56,6 +57,7 @@ struct Blur {
 };
 
 struct Scene {
+  Light light;
   Shaders shaders;
   Vertices vertices;
   Models models;
@@ -184,6 +186,10 @@ void lightingPass(Scene scene) {
   screen.setInt("normalBuffer", 1);
   screen.setInt("albedoBuffer", 2);
   screen.setInt("ssaoBuffer", 3);
+  screen.setVec3("light.position", scene.light.position);
+  screen.setVec3("light.colour", scene.light.colour);
+  screen.setFloat("light.linear", scene.light.linear);
+  screen.setFloat("light.quadratic", scene.light.quadratic);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, scene.buffers.gPosition);
   glActiveTexture(GL_TEXTURE1);
@@ -422,7 +428,15 @@ Blur generateBlur() {
 }
 
 Scene generateScene() {
+  Light light = {
+    .position = glm::vec3(2.0, 4.0, -2.0),
+    .colour = glm::vec3(0.2, 0.2, 0.7),
+    .linear = 0.09,
+    .quadratic = 0.032,
+  };
+
   return {
+    .light = light,
     .shaders = generateShaders(),
     .vertices = generateVertices(),
     .models = generateModels(),
