@@ -20,7 +20,7 @@ struct Light {
   float radius;
 };
 
-struct Buffers {
+struct GBuffer {
   unsigned int gBuffer;
   unsigned int gPosition;
   unsigned int gNormal;
@@ -31,6 +31,7 @@ struct Shaders {
   Shader geometry;
   Shader screen;
   Shader ssao;
+  Shader blur;
 };
 
 struct Vertices {
@@ -49,12 +50,18 @@ struct SSAO {
   unsigned int noiseTexture;
 };
 
+struct Blur {
+  unsigned int buffer;
+  unsigned int texture;
+};
+
 struct Scene {
   Shaders shaders;
   Vertices vertices;
   Models models;
-  Buffers buffers;
+  GBuffer buffers;
   SSAO ssao;
+  Blur blur;
 };
 
 // Function Headers
@@ -155,6 +162,17 @@ void ssaoPass(Scene scene) {
   renderQuad(scene.vertices.quad);
 }
 
+void blurPass(Scene scene) {
+  Shader blur = scene.shaders.blur;
+  glBindFramebuffer(GL_FRAMEBUFFER, scene.blur.buffer);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  blur.use();
+  blur.setInt("ssaoInput", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, scene.ssao.ssaoTexture);
+  renderQuad(scene.vertices.quad);
+}
+
 void lightingPass(Scene scene) {
   // Deferred Pass
   Shader screen = scene.shaders.screen;
@@ -181,6 +199,7 @@ void lightingPass(Scene scene) {
 void deferredRendering(Scene scene) {
   geometryPass(scene);
   ssaoPass(scene);
+  blurPass(scene);
   lightingPass(scene);
 }
 
@@ -219,7 +238,7 @@ int main() {
   return 0;
 }
 
-Buffers generateBuffers() {
+GBuffer generateBuffers() {
   unsigned int gBuffer;
   glGenFramebuffers(1, &gBuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -285,6 +304,10 @@ Shaders generateShaders() {
     (string(SHADER_DIR) + "/ssao-vertex.glsl").c_str(),
     (string(SHADER_DIR) + "/ssao-fragment.glsl").c_str()
   );
+  Shader blur = Shader(
+    (string(SHADER_DIR) + "/blur-vertex.glsl").c_str(),
+    (string(SHADER_DIR) + "/blur-fragment.glsl").c_str()
+  );
   Shader screen = Shader(
     (string(SHADER_DIR) + "/screen-vertex.glsl").c_str(),
     (string(SHADER_DIR) + "/screen-fragment.glsl").c_str()
@@ -293,6 +316,7 @@ Shaders generateShaders() {
     .geometry = geometry,
     .screen = screen,
     .ssao = ssao,
+    .blur = blur,
   };
 }
 
@@ -365,7 +389,6 @@ SSAO generateSSAO() {
   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     cout << "Framebuffer is not complete." << endl;
 
-  glBindRenderbuffer(GL_RENDERBUFFER, 0);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -377,6 +400,27 @@ SSAO generateSSAO() {
   };
 }
 
+Blur generateBlur() {
+  unsigned int blurFBO, blurTexture;
+  glGenFramebuffers(1, &blurFBO);
+  glBindFramebuffer(GL_FRAMEBUFFER, blurFBO);
+  glGenTextures(1, &blurTexture);
+  glBindTexture(GL_TEXTURE_2D, blurTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, windowWidth, windowHeight, 0, GL_RED, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTexture, 0);
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    cout << "Framebuffer is not complete." << endl;
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  return {
+    .buffer = blurFBO,
+    .texture = blurTexture,
+  };
+}
+
 Scene generateScene() {
   return {
     .shaders = generateShaders(),
@@ -384,6 +428,7 @@ Scene generateScene() {
     .models = generateModels(),
     .buffers = generateBuffers(),
     .ssao = generateSSAO(),
+    .blur = generateBlur(),
   };
 }
 
