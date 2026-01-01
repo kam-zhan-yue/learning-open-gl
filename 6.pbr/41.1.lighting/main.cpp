@@ -163,8 +163,11 @@ Scene generateScene() {
 void renderScene(Scene scene) {
   Shader shader = scene.shaders.pbr;
   shader.use();
+  shader.setVec3("camPos", camera.cameraPos);
   shader.setMat4("view", camera.getLookAt());
   shader.setMat4("projection", camera.getPerspective());
+  shader.setFloat("ambientOcclusion", 1.0f);
+  shader.setVec3("albedo", vec3(0.5f, 0.0f, 0.0f));
   mat4 model = mat4(1.0f);
 
   model = mat4(1.0f);

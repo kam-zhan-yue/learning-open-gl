@@ -6,6 +6,7 @@ layout (location = 2) in vec2 aTexCoords;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat3 normalMatrix;
 
 out V_OUT {
   vec3 position;
@@ -13,14 +14,10 @@ out V_OUT {
   vec2 texCoords;
 } v_out;
 
-uniform bool invertedNormals;
-
 void main()
 {
-  vec4 viewPos = view * model * vec4(aPos, 1.0);
-  gl_Position = projection * viewPos;
+  gl_Position = projection * view * model * vec4(aPos, 1.0);
+  v_out.position = vec3(model * vec4(aPos, 1.0));
+  v_out.normal = normalize(normalMatrix * aNormal);
   v_out.texCoords = aTexCoords;
-  v_out.position = viewPos.xyz;
-  mat3 normalMatrix = mat3(transpose(inverse(view * model)));
-  v_out.normal = normalize(normalMatrix * (invertedNormals ? -aNormal : aNormal));
 }
