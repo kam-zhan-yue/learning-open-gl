@@ -101,6 +101,11 @@ public:
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
   };
 
+  void setMat3(const std::string &name, glm::mat3 value) const {
+    unsigned int loc = glGetUniformLocation(ID, name.c_str());
+    glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(value));
+  };
+
 private:
   unsigned int generateShader(const char *path, unsigned int SHADER_TYPE) {
     // 1: Retrieve the vertex / fragment source code from the filepaths
