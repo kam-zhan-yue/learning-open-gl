@@ -13,6 +13,7 @@ struct Light {
 
 struct Shaders {
   Shader pbr;
+  Shader background;
 };
 
 struct Shapes {
@@ -105,6 +106,7 @@ GLFWwindow *init() {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
 
   return window;
 }
@@ -147,8 +149,13 @@ Shaders generateShaders() {
     (string(SHADER_DIR) + "/pbr-vertex.glsl").c_str(),
     (string(SHADER_DIR) + "/pbr-fragment.glsl").c_str()
   );
+  Shader background = Shader(
+    (string(SHADER_DIR) + "/background-vertex.glsl").c_str(),
+    (string(SHADER_DIR) + "/background-fragment.glsl").c_str()
+  );
   return { 
     .pbr = pbr,
+    .background = background,
   };
 }
 
@@ -342,6 +349,15 @@ void renderSpheres(Scene scene) {
 }
 
 void renderEnvironment(Scene scene) {
+  Shader shader = scene.shaders.background;
+  shader.use();
+  shader.setMat4("view", camera.getLookAt());
+  shader.setMat4("projection", camera.getPerspective());
+  shader.setInt("environmentCubemap", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.texture);
+  scene.shapes.cube.draw();
+  glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 
