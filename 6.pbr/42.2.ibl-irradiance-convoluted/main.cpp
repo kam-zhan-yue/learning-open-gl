@@ -329,22 +329,11 @@ Scene generateScene() {
 void renderSpheres(Scene scene) {
   Shader shader = scene.shaders.pbr;
   shader.use();
-  // Texture Parameters
-  shader.setInt("albedoMap", 0);
-  shader.setInt("normalMap", 1);
-  shader.setInt("metallicMap", 2);
-  shader.setInt("roughnessMap", 3);
-  shader.setInt("occlusionMap", 4);
+  shader.setFloat("ambientOcclusion", 1.0f);
+  shader.setVec3("albedo", vec3(0.5f, 0.0f, 0.0f));
+  shader.setInt("irradianceMap", 0);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, scene.textures.albedo);
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, scene.textures.normal);
-  glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, scene.textures.metallic);
-  glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, scene.textures.roughness);
-  glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_2D, scene.textures.occlusion);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.irradianceTexture);
 
   shader.setVec3("camPos", camera.cameraPos);
   shader.setMat4("view", camera.getLookAt());
@@ -359,7 +348,9 @@ void renderSpheres(Scene scene) {
   const int COLS = 7;
   const float SPACING = 2.5;
   for (int row = 0; row < ROWS; ++row) {
+    shader.setFloat("metallic", (float)row / ROWS);
     for (int col = 0; col < COLS; ++col) {
+      shader.setFloat("roughness", glm::clamp((float)col / COLS, 0.05f, 1.0f));
       model = mat4(1.0f);
       model = translate(model, vec3(
         (col - (COLS / 2.0f)) * SPACING,
@@ -394,7 +385,7 @@ void renderEnvironment(Scene scene) {
   shader.setMat4("projection", camera.getPerspective());
   shader.setInt("environmentCubemap", 0);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.irradianceTexture);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.texture);
   scene.shapes.cube.draw();
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
