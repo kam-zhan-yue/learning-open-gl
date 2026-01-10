@@ -32,7 +32,8 @@ struct Textures {
 
 struct Environment {
   unsigned int texture;
-  unsigned int irradianceTexture;
+  unsigned int irradianceMap;
+  unsigned int prefilterMap;
 };
 
 struct Scene {
@@ -335,12 +336,12 @@ Environment generateEnvironment() {
     // render the prefilter convolution to each side of the cube at varying roughnesses at different mipmap levels
     float roughness = (float)mip / (maxMipLevels - 1);
     prefilterShader.setFloat("roughness", roughness);
-    // for (unsigned int i = 0; i < 6; ++i) {
-    //   prefilterShader.setMat4("view", captureViews[i]);
-    //   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
-    //   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //   cube.draw();
-    // }
+    for (unsigned int i = 0; i < 6; ++i) {
+      prefilterShader.setMat4("view", captureViews[i]);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      cube.draw();
+    }
   }
 
   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -352,7 +353,8 @@ Environment generateEnvironment() {
 
   return {
     .texture = environmentCubemap,
-    .irradianceTexture = irradianceMap,
+    .irradianceMap = irradianceMap,
+    .prefilterMap = prefilterMap,
   };
 }
 
@@ -379,7 +381,7 @@ void renderSpheres(Scene scene) {
   shader.setVec3("albedo", vec3(0.5f, 0.0f, 0.0f));
   shader.setInt("irradianceMap", 0);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.irradianceTexture);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.irradianceMap);
 
   shader.setVec3("camPos", camera.cameraPos);
   shader.setMat4("view", camera.getLookAt());
@@ -431,7 +433,7 @@ void renderEnvironment(Scene scene) {
   shader.setMat4("projection", camera.getPerspective());
   shader.setInt("environmentCubemap", 0);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.texture);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.prefilterMap);
   scene.shapes.cube.draw();
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
