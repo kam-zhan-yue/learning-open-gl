@@ -14,12 +14,12 @@ in V_OUT {
 } f_in;
 
 uniform vec3 camPos;
-uniform vec3 albedo;
-uniform float metallic;
-uniform float roughness;
-uniform float ambientOcclusion;
 
-uniform samplerCube irradianceMap;
+uniform sampler2D albedoMap;
+uniform sampler2D normalMap;
+uniform sampler2D metallicMap;
+uniform sampler2D roughnessMap;
+uniform sampler2D occlusionMap;
 
 #define NUM_LIGHTS 4
 uniform Light lights[NUM_LIGHTS];
@@ -28,10 +28,6 @@ const float PI = 3.14159265359;
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
   return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-}
-
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
-  return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 float distributionGGX(vec3 N, vec3 H, float roughness) {
@@ -62,8 +58,28 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
   return ggx1 * ggx2;
 }
 
+// trick to get tangent-normals to world-space
+vec3 getNormal() {
+  vec3 tangentNormal = texture(normalMap, f_in.texCoords).rgb * 2.0 - 1.0;
+  vec3 Q1 = dFdx(f_in.position);
+  vec3 Q2 = dFdy(f_in.position);
+  vec2 st1 = dFdx(f_in.texCoords);
+  vec2 st2 = dFdy(f_in.texCoords);
+
+  vec3 N = normalize(f_in.normal);
+  vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
+  vec3 B = -normalize(cross(N, T));
+  mat3 TBN = mat3(T, B, N);
+  return normalize(TBN * tangentNormal);
+}
+
 void main() {
-  vec3 N = f_in.normal;
+  vec3 albedo = pow(texture(albedoMap, f_in.texCoords).rgb, vec3(2.2));
+  float metallic = texture(metallicMap, f_in.texCoords).r;
+  float roughness = texture(roughnessMap, f_in.texCoords).r;
+  float occlusion = texture(occlusionMap, f_in.texCoords).r;
+
+  vec3 N = getNormal();
   vec3 V = normalize(camPos - f_in.position);
 
   // base reflectivity (assume 0.04 for dielectrics)
@@ -105,13 +121,9 @@ void main() {
   }
 
   // ambient lighting
-  vec3 kS = fresnelSchlick(max(dot(N, V), 0.0), F0);
-  vec3 kD = vec3(1.0) - kS;
-  vec3 irradiance = texture(irradianceMap, N).rgb;
-  vec3 diffuse = irradiance * albedo;
-  vec3 ambient = (kS * diffuse) * ambientOcclusion;
-
+  vec3 ambient = vec3(0.03) * albedo * occlusion;
   vec3 colour = ambient + Lo;
+
   // HDR tone mapping using Reinhard operator
   colour = colour / (colour + vec3(1.0));
   // gamma correction
