@@ -20,8 +20,6 @@ uniform float roughness;
 uniform float ambientOcclusion;
 
 uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-uniform sampler2D brdfLUT;
 
 #define NUM_LIGHTS 4
 uniform Light lights[NUM_LIGHTS];
@@ -106,25 +104,12 @@ void main() {
     Lo += (kD * albedo / PI + specular) * radiance * NdotL;
   }
 
-  // diffuse lighting
-  float NdotV = max(dot(N, V), 0.0);
-  vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
-  vec3 kS = F;
+  // ambient lighting
+  vec3 kS = fresnelSchlick(max(dot(N, V), 0.0), F0);
   vec3 kD = vec3(1.0) - kS;
   vec3 irradiance = texture(irradianceMap, N).rgb;
   vec3 diffuse = irradiance * albedo;
-
-  // specular lighting - prefiltered map
-  vec3 R = reflect(-V, N);
-  const float MAX_REFLECTION_LOD = 4.0;
-  vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-
-  // specular lighting - brdf map
-  vec2 envBRDF = texture(brdfLUT, vec2(NdotV, roughness)).rg;
-  // vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-  vec3 specular = vec3(0.0);
-
-  vec3 ambient = (kS * diffuse + specular) * ambientOcclusion;
+  vec3 ambient = (kS * diffuse) * ambientOcclusion;
 
   vec3 colour = ambient + Lo;
   // HDR tone mapping using Reinhard operator
