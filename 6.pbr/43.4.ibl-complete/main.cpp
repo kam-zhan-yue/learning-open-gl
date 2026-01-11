@@ -426,13 +426,13 @@ void renderSpheres(Scene scene) {
   shader.setVec3("albedo", vec3(0.5f, 0.0f, 0.0f));
   shader.setInt("irradianceMap", 0);
   shader.setInt("prefilterMap", 1);
-  shader.setInt("brdfLookup", 2);
+  shader.setInt("brdfLUT", 2);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.irradianceMap);
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.prefilterMap);
   glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.brdfLUTTexture);
+  glBindTexture(GL_TEXTURE_2D, scene.environment.brdfLUTTexture);
 
   shader.setVec3("camPos", camera.cameraPos);
   shader.setMat4("view", camera.getLookAt());
@@ -487,6 +487,15 @@ void renderEnvironment(Scene scene) {
   glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.texture);
   scene.shapes.cube.draw();
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+
+  Shader quad = scene.shaders.quad;
+  quad.use();
+  quad.setInt("brdf", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, scene.environment.brdfLUTTexture);
+  scene.shapes.quad.draw();
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void renderScene(Scene scene) {
