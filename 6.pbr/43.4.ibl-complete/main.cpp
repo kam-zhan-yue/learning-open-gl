@@ -15,6 +15,7 @@ struct Shaders {
   Shader pbr;
   Shader background;
   Shader quad;
+  Shader brdf;
 };
 
 struct Shapes {
@@ -163,10 +164,15 @@ Shaders generateShaders() {
     (string(SHADER_DIR) + "/quad-vertex.glsl").c_str(),
     (string(SHADER_DIR) + "/quad-fragment.glsl").c_str()
   );
+  Shader brdf = Shader(
+    (string(SHADER_DIR) + "/brdf-vertex.glsl").c_str(),
+    (string(SHADER_DIR) + "/brdf-fragment.glsl").c_str()
+  );
   return { 
     .pbr = pbr,
     .background = background,
     .quad = quad,
+    .brdf = brdf,
   };
 }
 
@@ -370,7 +376,7 @@ Environment generateEnvironment() {
 
   // pre-allocate enough memory for the LUT texture
   glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 512, 512, 0, GL_RGBA, GL_FLOAT, 0); // use GL_RGBA because old method was not fking working
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -487,15 +493,6 @@ void renderEnvironment(Scene scene) {
   glBindTexture(GL_TEXTURE_CUBE_MAP, scene.environment.texture);
   scene.shapes.cube.draw();
   glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-
-  Shader quad = scene.shaders.quad;
-  quad.use();
-  quad.setInt("brdf", 0);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, scene.environment.brdfLUTTexture);
-  scene.shapes.quad.draw();
-  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void renderScene(Scene scene) {
