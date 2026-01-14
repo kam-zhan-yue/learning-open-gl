@@ -93,6 +93,8 @@ foreach(example_file ${EXAMPLES})
     ${CMAKE_SOURCE_DIR}/${example_dir}/*.vs
     ${CMAKE_SOURCE_DIR}/${example_dir}/*.fs
     ${CMAKE_SOURCE_DIR}/${example_dir}/*.glsl
+    ${CMAKE_SOURCE_DIR}/${example_dir}/*.frag
+    ${CMAKE_SOURCE_DIR}/${example_dir}/*.vert
     ${CMAKE_SOURCE_DIR}/${example_dir}/*.png
   )
 
