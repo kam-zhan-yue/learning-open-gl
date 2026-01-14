@@ -63,7 +63,6 @@ int main() {
 
   glViewport(0, 0, windowWidth, windowHeight);
   int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-  cout << flags << endl;
 
   if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
     cout << "what" << endl;

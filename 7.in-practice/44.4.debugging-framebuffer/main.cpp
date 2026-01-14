@@ -27,7 +27,7 @@ void renderModel(Model &model, Shader &shader, WorldData world);
 void renderLight(Shader &shader, unsigned int VAO, WorldData world);
 void mouseCallback(GLFWwindow *window, double xPos, double yPos);
 void scrollCallback(GLFWwindow *window, double xPos, double yPos);
-void debugFramebufferTexture(unsigned int texture);
+void debugFramebufferTexture(unsigned int texture, Shader shader);
 
 // Global Variables
 bool firstMouse = false;
@@ -106,7 +106,18 @@ int main() {
     },
   };
 
-  Shader backpackShader = Shader((string(SHADER_DIR) + "/model-vertex.glsl").c_str(), (string(SHADER_DIR) + "/model-fragment.glsl").c_str());
+  Shader backpackShader = Shader(
+    (string(SHADER_DIR) + "/backpack.vert").c_str(), 
+    (string(SHADER_DIR) + "/backpack.frag").c_str()
+  );
+  Shader normalShader = Shader(
+    (string(SHADER_DIR) + "/normal.vert").c_str(), 
+    (string(SHADER_DIR) + "/normal.frag").c_str()
+  );
+  Shader framebufferShader = Shader(
+    (string(SHADER_DIR) + "/debug.vert").c_str(), 
+    (string(SHADER_DIR) + "/debug.frag").c_str()
+  );
   Model backpack = Model("/objects/backpack/backpack.obj");
 
   // Framebuffer Setup
@@ -138,11 +149,6 @@ int main() {
   glBindRenderbuffer(GL_RENDERBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  Shader framebufferShader = Shader(
-    (string(SHADER_DIR) + "/framebuffer-debug.vert").c_str(), 
-    (string(SHADER_DIR) + "/framebuffer-debug.frag").c_str()
-  );
-
   Quad quad = Quad();
 
   // Create a render loop that swaps the front/back buffers and polls for user events
@@ -166,7 +172,9 @@ int main() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      renderModel(backpack, backpackShader, world);
+      renderModel(backpack, normalShader, world);
+
+    debugFramebufferTexture(framebufferTexture, framebufferShader);
 
     // check events and swap buffers
     glfwSwapBuffers(window);
@@ -339,9 +347,10 @@ void scrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
   camera.processScroll(xOffset, yOffset);
 }
 
-void debugFramebufferTexture(unsigned int texture) {
+void debugFramebufferTexture(unsigned int texture, Shader shader) {
   if (!initialised) {
     initialised = true;
+
     shaderDisplayFBOOutput = glCreateProgram();
     float vertices[] = {
       // positions        // texture Coords
@@ -369,6 +378,8 @@ void debugFramebufferTexture(unsigned int texture) {
     vaoDebugTexturedRect = VAO;
   }
 
+  shader.use();
+  shader.setInt("framebuffer", 0);
   glActiveTexture(GL_TEXTURE0);
   glUseProgram(shaderDisplayFBOOutput);
   glBindTexture(GL_TEXTURE_2D, texture);
