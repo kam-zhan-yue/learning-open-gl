@@ -56,6 +56,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 # -----------------------------
+# FreeType (via FetchContent)
+# -----------------------------
+
+FetchContent_Declare(
+  freetype
+  GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype
+  GIT_TAG VER-2-14-1
+)
+FetchContent_MakeAvailable(freetype)
+
+
+# -----------------------------
 # Automatically add all examples (recursively)
 # -----------------------------
 file(GLOB_RECURSE EXAMPLES
@@ -72,7 +84,7 @@ foreach(example_file ${EXAMPLES})
 
   # Create executable
   add_executable(${target_name} ${example_file})
-  target_link_libraries(${target_name} PRIVATE glad glfw stb_image assimp)
+  target_link_libraries(${target_name} PRIVATE glad glfw stb_image assimp freetype)
   target_include_directories(${target_name} PRIVATE includes)
 
   # Put all executables in a central bin folder
