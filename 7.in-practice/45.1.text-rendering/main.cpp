@@ -22,14 +22,20 @@ struct Character {
   long advance; // offset to advance to the next glyph
 };
 
-map<char, Character> characters;
+struct TextRenderer {
+  Shader shader;
+  map<char, Character> characters;
+  mat4 projection;
+  unsigned int VAO;
+  unsigned int VBO;
+};
 
 // Function Headers
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window, float &deltaTime);
-unsigned int loadTexture(char const *path);
 void mouseCallback(GLFWwindow *window, double xPos, double yPos);
-void loadCharacters();
+TextRenderer loadRenderer();
+void renderText(TextRenderer renderer, string text, float x, float y, float scale, vec3 colour);
 
 // Global Variables
 bool firstMouse = false;
@@ -98,25 +104,7 @@ GLFWwindow *init() {
 int main() {
   GLFWwindow *window = init();
 
-  loadCharacters();
-
-  Shader textShader = Shader(
-    (string(SHADER_DIR) + "/text.vert").c_str(), 
-    (string(SHADER_DIR) + "/text.frag").c_str()
-  );
-
-  mat4 projection = ortho(0.0f, 800.0f, 0.0f, 600.0f);
-
-  unsigned VAO, VBO;
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-  glBindVertexArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  TextRenderer renderer = loadRenderer();
 
   // Create a render loop that swaps the front/back buffers and polls for user events
   // Necessary to prevent the window from closing instantly
@@ -129,6 +117,9 @@ int main() {
     // inputs
     processInput(window, deltaTime);
 
+    renderText(renderer, "This is sample text.", 25.0f, 25.0f, 1.0f, vec3(0.5, 0.8, 0.2));
+    renderText(renderer, "LearnOpenGL", 540.0f, 570.0f, 0.5f, vec3(0.3, 0.7, 0.9));
+
     // check events and swap buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -138,25 +129,26 @@ int main() {
   return 0;
 }
 
-void loadCharacters() {
+TextRenderer loadRenderer() {
   // FreeType setup
   FT_Library ft;
   if (FT_Init_FreeType(&ft)) {
     cout << "ERROR::FREETYPE: Could not init FreeType Library" << endl;
-    return;
+    throw exception();
   }
 
   FT_Face face;
   string path = string(RESOURCES_DIR) + "/fonts/Antonio-Regular.ttf";
   if (FT_New_Face(ft, path.c_str() , 0, &face)) {
     cout << "ERROR:FREETYPE: Failed to load font" << endl;
-    return;
+    throw exception();
   }
 
   FT_Set_Pixel_Sizes(face, 0, 48);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // no byte-alignment restriction
 
+  map<char, Character> characters;
   for (unsigned char c = 0; c < 128; ++c) {
     if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
       cout << "ERROR::FREETYPE: Failed to load glyph " << c << endl;
@@ -177,6 +169,7 @@ void loadCharacters() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     Character character = {
       .id = texture,
       .size = ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
@@ -188,47 +181,75 @@ void loadCharacters() {
 
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
+
+  mat4 projection = ortho(0.0f, 800.0f, 0.0f, 600.0f);
+
+  unsigned VAO, VBO;
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  Shader textShader = Shader(
+    (string(SHADER_DIR) + "/text.vert").c_str(), 
+    (string(SHADER_DIR) + "/text.frag").c_str()
+  );
+
+  return {
+    .shader = textShader,
+    .characters = characters,
+    .projection = projection,
+    .VAO = VAO,
+    .VBO = VBO,
+  };
 }
 
-/*
-* Utility function for loading a 2D texture from a file
-*/
-unsigned int loadTexture(char const *path) {
-  unsigned int textureID;
-  glGenTextures(1, &textureID);
-  
-  int width, height, nrChannels;
-  std::string resourcePath = (std::string(RESOURCES_DIR) + path);
-  unsigned char *data = stbi_load(resourcePath.c_str(), &width, &height, &nrChannels, 0);
+void renderText(TextRenderer renderer, string text, float x, float y, float scale, vec3 colour) {
+  renderer.shader.use();
+  renderer.shader.setVec3("colour", colour);
+  renderer.shader.setMat4("projection", renderer.projection);
+  renderer.shader.setInt("text", 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindVertexArray(renderer.VAO);
 
-  if (data) {
-    GLenum format;
-    if (nrChannels == 1)
-      format = GL_RED;
-    else if (nrChannels == 3)
-      format = GL_RGB;
-    else if (nrChannels == 4)
-      format = GL_RGBA;
+  string::const_iterator c;
+  for (c = text.begin(); c != text.end(); ++c) {
+    Character ch = renderer.characters[*c];
 
-    // Bind and set the newly created texture
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    float xPos = x + ch.bearing.x * scale;
+    float yPos = y - (ch.size.y - ch.bearing.y) * scale;
 
-    // set the texture wrapping / filtering options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    float w = ch.size.x * scale;
+    float h = ch.size.y * scale;
 
-    // free the data
-    stbi_image_free(data);
-  } else {
-    std::cout << "Failed to load texture" << std::endl;
-    stbi_image_free(data);
+    // update VBO for each character
+    float vertices[6][4] = {
+      { xPos,     yPos + h,   0.0f,   0.0f  },
+      { xPos,     yPos,       0.0f,   1.0f  },
+      { xPos + w, yPos,       1.0f,   1.0f  },
+
+      { xPos ,    yPos + h,   0.0f,   0.0f  },
+      { xPos + w, yPos,       1.0f,   1.0f  },
+      { xPos + w, yPos + h,   1.0f,   0.0f  },
+    };
+
+    if (*c != ' ') {
+      glBindTexture(GL_TEXTURE_2D, ch.id); // render glyph texture over the quad
+      glBindBuffer(GL_ARRAY_BUFFER, renderer.VBO); // update content of the buffer
+      glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+      glDrawArrays(GL_TRIANGLES, 0, 6); // render quad
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+    // advance cursors for next glyph (advance is 1/64 pixels)
+    x += (ch.advance >> 6) * scale; // bitshift by 6 (2^6 = 64)
   }
-
-  return textureID;
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
